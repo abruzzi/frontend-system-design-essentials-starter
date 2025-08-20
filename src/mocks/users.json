@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "name": "Quentin Davis",
+    "description": "Quentin Davis is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=1"
+  },
+  {
+    "id": 2,
+    "name": "Charlie Moore",
+    "description": "Charlie Moore is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=2"
+  },
+  {
+    "id": 3,
+    "name": "Alice Gonzalez",
+    "description": "Alice Gonzalez is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=3"
+  },
+  {
+    "id": 4,
+    "name": "Sam Martin",
+    "description": "Sam Martin is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=4"
+  },
+  {
+    "id": 5,
+    "name": "Hannah Smith",
+    "description": "Hannah Smith is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=5"
+  },
+  {
+    "id": 6,
+    "name": "George Garcia",
+    "description": "George Garcia is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=6"
+  },
+  {
+    "id": 7,
+    "name": "Fiona Anderson",
+    "description": "Fiona Anderson is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=7"
+  },
+  {
+    "id": 8,
+    "name": "Diana Lopez",
+    "description": "Diana Lopez is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=8"
+  },
+  {
+    "id": 9,
+    "name": "Sam Moore",
+    "description": "Sam Moore is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=9"
+  },
+  {
+    "id": 10,
+    "name": "Charlie Gonzalez",
+    "description": "Charlie Gonzalez is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=10"
+  },
+  {
+    "id": 11,
+    "name": "Rachel Miller",
+    "description": "Rachel Miller is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=11"
+  },
+  {
+    "id": 12,
+    "name": "Nina Martin",
+    "description": "Nina Martin is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=12"
+  },
+  {
+    "id": 13,
+    "name": "Charlie Jones",
+    "description": "Charlie Jones is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=13"
+  },
+  {
+    "id": 14,
+    "name": "Paula Williams",
+    "description": "Paula Williams is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=14"
+  },
+  {
+    "id": 15,
+    "name": "Kevin Taylor",
+    "description": "Kevin Taylor is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=15"
+  },
+  {
+    "id": 16,
+    "name": "Alice Taylor",
+    "description": "Alice Taylor is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=16"
+  },
+  {
+    "id": 17,
+    "name": "Alice Thomas",
+    "description": "Alice Thomas is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=17"
+  },
+  {
+    "id": 18,
+    "name": "Charlie Davis",
+    "description": "Charlie Davis is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=18"
+  },
+  {
+    "id": 19,
+    "name": "Fiona Lopez",
+    "description": "Fiona Lopez is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=19"
+  },
+  {
+    "id": 20,
+    "name": "Fiona Martin",
+    "description": "Fiona Martin is a sample user in the starter project user list.",
+    "avatar_url": "https://i.pravatar.cc/150?img=20"
+  }
+]
