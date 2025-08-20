@@ -1,0 +1,44 @@
+{
+  "columns": [
+    {
+      "id": "col-1",
+      "title": "Backlog",
+      "cards": [
+        { "id": "TICKET-1", "title": "Setup project structure" },
+        { "id": "TICKET-2", "title": "Install dependencies" },
+        {
+          "id": "TICKET-3",
+          "title": "Configure ESLint & Prettier",
+          "assignee": { "id": 2, "name": "Charlie Moore", "avatar_url": "https://i.pravatar.cc/150?img=2" }
+        }
+      ]
+    },
+    {
+      "id": "col-2",
+      "title": "In Progress",
+      "cards": [
+        {
+          "id": "TICKET-4",
+          "title": "Implement user list API",
+          "assignee": { "id": 5, "name": "Hannah Smith", "avatar_url": "https://i.pravatar.cc/150?img=5" }
+        },
+        {
+          "id": "TICKET-5",
+          "title": "Create Board UI",
+          "assignee": { "id": 8, "name": "Diana Lopez", "avatar_url": "https://i.pravatar.cc/150?img=8" }
+        }
+      ]
+    },
+    {
+      "id": "col-3",
+      "title": "Done",
+      "cards": [
+        {
+          "id": "TICKET-6",
+          "title": "Add TailwindCSS setup",
+          "assignee": { "id": 1, "name": "Quentin Davis", "avatar_url": "https://i.pravatar.cc/150?img=1" }
+        }
+      ]
+    }
+  ]
+}

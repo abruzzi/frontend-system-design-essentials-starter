@@ -1,46 +1,20 @@
 import * as Popover from "@radix-ui/react-popover";
-import Select, { type SingleValue } from "react-select";
-import { useMemo, useState } from "react";
-
-type User = { id: string; name: string; avatar?: string };
+import { useState } from "react";
+import { UserSelect } from "./UserSelect.tsx";
+import type { User } from "../types.ts";
 
 type CardProps = {
   id: string;
   title: string;
-  users: User[];
-  assigneeId?: string;
-  onAssign: (ticketId: string, userId: string) => void;
+  assignee?: User;
 };
 
-const users: User[] = [
-  { id: "u_1", name: "Mina" },
-  { id: "u_2", name: "Alex" },
-  { id: "u_3", name: "Sam" },
-];
-
-type Option = { value: string; label: string; avatar?: string };
-
-const AssigneeOption = ({ option }: { option: Option }) => {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="inline-block h-6 w-6 rounded-full bg-neutral-300" />
-      <span>{option.label}</span>
-    </div>
-  );
-};
-export const Card = ({ id, title, assigneeId, onAssign }: CardProps) => {
+export const Card = ({ id, title, assignee }: CardProps) => {
   const [open, setOpen] = useState(false);
 
-  const options: Option[] = useMemo(
-    () => users.map((u) => ({ value: u.id, label: u.name, avatar: u.avatar })),
-    [users],
-  );
-
-  const selected = options.find((o) => o.value === assigneeId) ?? null;
-
-  function handleChange(opt: SingleValue<Option>) {
-    if (!opt) return;
-    onAssign(id, opt.value);
+  function handleAssignUser(user: User) {
+    if (!user) return;
+    console.log(user);
     setOpen(false);
   }
 
@@ -55,16 +29,24 @@ export const Card = ({ id, title, assigneeId, onAssign }: CardProps) => {
           {id}
         </span>
 
-        {/* Avatar = popover trigger */}
         <Popover.Root open={open} onOpenChange={setOpen}>
           <Popover.Trigger asChild>
             <button
               type="button"
               aria-label="Open assignee picker"
               className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-300 text-[11px] font-medium
-                         hover:ring-2 hover:ring-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+               hover:ring-2 hover:ring-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              {selected?.label?.[0] /* optional initial in the dot */}
+              {assignee?.avatar_url ? (
+                <img
+                  src={assignee.avatar_url}
+                  alt={assignee.name}
+                  className="h-6 w-6 rounded-full object-cover"
+                />
+              ) : (
+                // fallback: initials or first letter
+                <span>{assignee?.name?.[0] ?? "?"}</span>
+              )}
             </button>
           </Popover.Trigger>
 
@@ -80,37 +62,7 @@ export const Card = ({ id, title, assigneeId, onAssign }: CardProps) => {
                 Assign user
               </div>
 
-              <Select<Option, false>
-                autoFocus
-                classNamePrefix="rs"
-                options={options}
-                value={selected}
-                onChange={handleChange}
-                placeholder="Search users…"
-                isClearable
-                styles={{
-                  control: (base, s) => ({
-                    ...base,
-                    minHeight: 40,
-                    borderColor: s.isFocused ? "#6366f1" : "#d4d4d8",
-                    boxShadow: s.isFocused
-                      ? "0 0 0 2px rgba(99,102,241,.25)"
-                      : "none",
-                  }),
-                  option: (base, s) => ({
-                    ...base,
-                    backgroundColor: s.isFocused
-                      ? "rgba(99,102,241,.08)"
-                      : "transparent",
-                    color: "#111827",
-                    cursor: "pointer",
-                  }),
-                  menu: (base) => ({ ...base, zIndex: 60 }),
-                }}
-                formatOptionLabel={(opt: Option) => (
-                  <AssigneeOption option={opt} />
-                )}
-              />
+              <UserSelect selected={assignee} handleChange={handleAssignUser} />
               <Popover.Arrow className="fill-white drop-shadow" />
             </Popover.Content>
           </Popover.Portal>
