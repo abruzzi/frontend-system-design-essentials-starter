@@ -1,4 +1,5 @@
 import { AssigneeList } from "./AssigneeList.tsx";
+import { ViewToggle } from "./ViewToggle.tsx";
 
 const SearchIcon = () => (
   <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-neutral-400">
@@ -13,7 +14,19 @@ const SearchIcon = () => (
   </span>
 );
 
-export const BoardControl = () => (
+type BoardControlProps = {
+  view: "board" | "list";
+  onToggleView: () => void;
+  search: string;
+  onSearchChange: (value: string) => void;
+};
+
+export const BoardControl = ({
+  view,
+  onToggleView,
+  search,
+  onSearchChange,
+}: BoardControlProps) => (
   <div className="w-full bg-neutral-100 border-neutral-200">
     <div className="mx-auto max-w-6xl px-4 py-3">
       <div className="inline-flex items-center gap-4 py-2">
@@ -21,10 +34,15 @@ export const BoardControl = () => (
           <SearchIcon />
           <input
             type="search"
-            placeholder="Search board"
-            className="w-full rounded-md border border-neutral-300 bg-white py-2 pl-9 pr-3 text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Search tickets (title, ID, assignee)"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full rounded-md border border-neutral-300 bg-white py-2 pl-9 pr-3 text-sm placeholder-neutral-400
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
+
+        <ViewToggle view={view} onToggle={onToggleView} />
         <AssigneeList />
       </div>
     </div>

@@ -22,6 +22,23 @@ function findCardById(boardData: BoardPayload, id: string) {
   return null;
 }
 
+function filterBoard(data: BoardPayload, q: string): BoardPayload {
+  if (!q) return data;
+
+  const needle = q.trim().toLowerCase();
+  const filteredColumns: Column[] = data.columns.map((col) => ({
+    ...col,
+    cards: col.cards.filter((c) => {
+      const inTitle = c.title.toLowerCase().includes(needle);
+      const inId = c.id.toLowerCase().includes(needle);
+      const inAssignee = c.user?.name?.toLowerCase().includes(needle) ?? false;
+      return inTitle || inId || inAssignee;
+    }),
+  }));
+
+  return { columns: filteredColumns };
+}
+
 export const handlers = [
   http.get("/api/users", ({ request }) => {
     const url = new URL(request.url);
@@ -34,8 +51,11 @@ export const handlers = [
     return HttpResponse.json(result);
   }),
 
-  http.get("/api/board/:id", () => {
-    return HttpResponse.json(board);
+  http.get("/api/board/:id", ({ request }) => {
+    const url = new URL(request.url);
+    const q = url.searchParams.get("q") ?? "";
+    const filtered = filterBoard(board as BoardPayload, q);
+    return HttpResponse.json(filtered);
   }),
 
   http.get("/api/cards/:id", ({ params }) => {

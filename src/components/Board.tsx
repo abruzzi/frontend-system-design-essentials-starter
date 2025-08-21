@@ -1,31 +1,40 @@
-import { BoardColumn } from "./BoardColumn.tsx";
 import { BoardControl } from "./BoardControl.tsx";
 import { useEffect, useState } from "react";
+import { ListView } from "./ListView.tsx";
+import { BoardView } from "./BoardView.tsx";
 
-export const Board = ({ id }) => {
+type ViewType = "board" | "list";
+
+export const Board = ({ id }: { id: string }) => {
   const [board, setBoard] = useState();
+  const [view, setView] = useState<ViewType>("board");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`/api/board/${id}`)
+    const url = `/api/board/${id}${search ? `?q=${encodeURIComponent(search)}` : ""}`;
+    fetch(url)
       .then((r) => r.json())
       .then((data) => setBoard(data));
-  }, []);
+  }, [id, search]);
 
   return (
     <>
-      <BoardControl />
+      <BoardControl
+        view={view}
+        onToggleView={() => setView((v) => (v === "board" ? "list" : "board"))}
+        search={search}
+        onSearchChange={setSearch}
+      />
 
       <main className="mx-auto max-w-6xl px-4 py-10 flex-1 w-full">
-
         {board && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {board.columns.map((col) => (
-              <section key={col.id} className="flex flex-col gap-4">
-                <h2 className="text-lg font-semibold">{col.title}</h2>
-                <BoardColumn cards={col.cards} />
-              </section>
-            ))}
-          </div>
+          <>
+            {view === "board" ? (
+              <BoardView board={board} />
+            ) : (
+              <ListView board={board} />
+            )}
+          </>
         )}
       </main>
     </>
