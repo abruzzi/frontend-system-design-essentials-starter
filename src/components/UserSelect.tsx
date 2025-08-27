@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import Select from "react-select";
 import type { User } from "../types.ts";
 
-type Option = { value: string; label: string; avatar?: string };
-
 const AssigneeOption = ({ option }: { option: User }) => {
   return (
     <div className="flex items-center gap-2">
