@@ -40,6 +40,20 @@ function filterBoard(data: BoardPayload, q: string): BoardPayload {
 }
 
 export const handlers = [
+  http.get("/api/users/:id", ({ params }) => {
+    const id = String(params.id);
+
+    const user = (users as User[]).find((u) => String(u.id) === id);
+    if (!user) {
+      return HttpResponse.json(
+        { error: `User ${id} not found` },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json(user);
+  }),
+
   http.get("/api/users", ({ request }) => {
     const url = new URL(request.url);
     const q = url.searchParams.get("query")?.trim().toLowerCase() ?? "";
