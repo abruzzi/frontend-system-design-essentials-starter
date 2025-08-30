@@ -1,13 +1,23 @@
-import type { BoardPayload } from "../types.ts";
+import { useBoardContext } from "./BoardContext.tsx";
 
-export const ListView = ({ board }: { board: BoardPayload }) => {
-  const rows = board.columns.flatMap((col) =>
-    col.cards.map((card) => ({
-      columnId: col.id,
-      columnTitle: col.title,
-      ...card,
-    })),
-  );
+export const ListView = () => {
+  const { state } = useBoardContext();
+
+  const rows = state.columnOrder.flatMap((colId) => {
+    const col = state.columnsById[colId];
+    return col.cardIds.map((cardId) => {
+      const card = state.cardsById[cardId];
+      const assignee = card.assigneeId
+        ? state.usersById[card.assigneeId]
+        : undefined;
+      return {
+        columnId: col.id,
+        columnTitle: col.title,
+        ...card,
+        assignee,
+      };
+    });
+  });
 
   return (
     <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">

@@ -1,19 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
+import { useBoardContext } from "./BoardContext.tsx";
 import type { User } from "../types.ts";
 
-export const TopBar = () => {
-  const [user, setUser] = useState<User>();
-  const [newName, setNewName] = useState("");
-
-  useEffect(() => {
-    fetch("/api/users/2")
-      .then((r) => r.json())
-      .then((data) => {
-        setUser(data);
-        setNewName(data.name);
-      });
-  }, []);
+export const TopBar = ({ user }: { user: User }) => {
+  const [newName, setNewName] = useState(user.name);
+  const { upsertUser } = useBoardContext();
 
   const handleSaveName = async () => {
     if (!user) return;
@@ -26,7 +18,7 @@ export const TopBar = () => {
 
     if (res.ok) {
       const updated = await res.json();
-      setUser(updated);
+      upsertUser(updated);
     } else {
       console.error("Failed to update user");
     }
