@@ -40,6 +40,22 @@ function filterBoard(data: BoardPayload, q: string): BoardPayload {
 }
 
 export const handlers = [
+  http.patch("/api/users/:id", async ({ params, request }) => {
+    const id = String(params.id);
+    const payload = await request.json();
+
+    const index = users.findIndex((u) => String(u.id) === id);
+    if (index === -1) {
+      return HttpResponse.json(
+        { error: `User ${id} not found` },
+        { status: 404 },
+      );
+    }
+
+    users[index] = { ...users[index], ...payload };
+    return HttpResponse.json(users[index]);
+  }),
+
   http.get("/api/users/:id", ({ params }) => {
     const id = String(params.id);
 

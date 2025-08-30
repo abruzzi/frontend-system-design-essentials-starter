@@ -41,6 +41,7 @@ export const Card = ({ id, title, assignee }: CardProps) => {
                 <img
                   src={assignee.avatar_url}
                   alt={assignee.name}
+                  title={assignee.name}
                   className="h-6 w-6 rounded-full object-cover"
                 />
               ) : (
