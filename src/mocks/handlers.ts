@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import users from "./users.json";
 import board from "./board.json";
 
@@ -14,6 +14,12 @@ type Card = { id: string; title: string; assignee?: UserLite };
 type Column = { id: string; title: string; cards: Card[] };
 type BoardPayload = { columns: Column[] };
 
+function variableDelay(q: string): number {
+  const base = q.startsWith("inst") ? 150 : q.startsWith("ins") ? 650 : 300;
+  const jitter = Math.floor(Math.random() * 120); // 0-119ms
+  return base + jitter;
+}
+
 function findCardById(boardData: BoardPayload, id: string) {
   for (const col of boardData.columns) {
     const card = col.cards.find((c) => c.id.toLowerCase() === id.toLowerCase());
@@ -22,7 +28,11 @@ function findCardById(boardData: BoardPayload, id: string) {
   return null;
 }
 
-function filterBoard(data: BoardPayload, q: string, assigneeIds: number[] = []): BoardPayload {
+function filterBoard(
+  data: BoardPayload,
+  q: string,
+  assigneeIds: number[] = [],
+): BoardPayload {
   const filteredColumns: Column[] = data.columns.map((col) => ({
     ...col,
     cards: col.cards.filter((c) => {
@@ -32,14 +42,17 @@ function filterBoard(data: BoardPayload, q: string, assigneeIds: number[] = []):
         const needle = q.trim().toLowerCase();
         const inTitle = c.title.toLowerCase().includes(needle);
         const inId = c.id.toLowerCase().includes(needle);
-        const inAssignee = c.assignee?.name?.toLowerCase().includes(needle) ?? false;
+        const inAssignee =
+          c.assignee?.name?.toLowerCase().includes(needle) ?? false;
         matchesTextSearch = inTitle || inId || inAssignee;
       }
 
       // Assignee filter
       let matchesAssigneeFilter = true;
       if (assigneeIds.length > 0) {
-        matchesAssigneeFilter = c.assignee ? assigneeIds.includes(c.assignee.id) : false;
+        matchesAssigneeFilter = c.assignee
+          ? assigneeIds.includes(c.assignee.id)
+          : false;
       }
 
       return matchesTextSearch && matchesAssigneeFilter;
@@ -52,7 +65,7 @@ function filterBoard(data: BoardPayload, q: string, assigneeIds: number[] = []):
 export const handlers = [
   http.patch("/api/users/:id", async ({ params, request }) => {
     const id = String(params.id);
-    const payload = await request.json() as Partial<User>;
+    const payload = (await request.json()) as Partial<User>;
 
     const index = users.findIndex((u) => String(u.id) === id);
     if (index === -1) {
@@ -91,17 +104,25 @@ export const handlers = [
     return HttpResponse.json(result);
   }),
 
-  http.get("/api/board/:id", ({ request }) => {
+  http.get("/api/board/:id", async ({ request }) => {
     const url = new URL(request.url);
     const q = url.searchParams.get("q") ?? "";
-    
+
     // Parse assigneeIds parameter - can be comma-separated list of user IDs
     const assigneeIdsParam = url.searchParams.get("assigneeIds");
     const assigneeIds: number[] = assigneeIdsParam
-      ? assigneeIdsParam.split(",").map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id))
+      ? assigneeIdsParam
+          .split(",")
+          .map((id) => parseInt(id.trim(), 10))
+          .filter((id) => !isNaN(id))
       : [];
-    
+
     const filtered = filterBoard(board as BoardPayload, q, assigneeIds);
+
+    const ms = variableDelay(q);
+
+    await delay(ms);
+
     return HttpResponse.json(filtered);
   }),
 

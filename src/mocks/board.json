@@ -10,7 +10,9 @@
           "id": "TICKET-3",
           "title": "Configure ESLint & Prettier",
           "assignee": { "id": 2, "name": "Charlie Moore", "avatar_url": "https://i.pravatar.cc/150?img=2" }
-        }
+        },
+        { "id": "TICKET-7", "title": "Instrument API analytics" },
+        { "id": "TICKET-8", "title": "Investigate slow installs on CI" }
       ]
     },
     {
@@ -26,7 +28,9 @@
           "id": "TICKET-5",
           "title": "Create Board UI",
           "assignee": { "id": 8, "name": "Diana Lopez", "avatar_url": "https://i.pravatar.cc/150?img=8" }
-        }
+        },
+        { "id": "TICKET-9", "title": "Instant search prototype" },
+        { "id": "TICKET-10", "title": "Install feature flags" }
       ]
     },
     {
@@ -37,7 +41,9 @@
           "id": "TICKET-6",
           "title": "Add TailwindCSS setup",
           "assignee": { "id": 1, "name": "Quentin Davis", "avatar_url": "https://i.pravatar.cc/150?img=1" }
-        }
+        },
+        { "id": "TICKET-11", "title": "Insights dashboard baseline" },
+        { "id": "TICKET-12", "title": "Instructional docs for onboarding" }
       ]
     }
   ]
