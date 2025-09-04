@@ -1,10 +1,11 @@
-import { createContext, useContext, useState } from "react";
-import type {BoardPayload, NormalizedBoard, User} from "../types.ts";
+import { createContext, useCallback, useContext, useState } from "react";
+import type { BoardPayload, NormalizedBoard, User } from "../types.ts";
 import { normalizeBoard } from "../utils";
 
 type BoardContextType = {
   state: NormalizedBoard;
   ingestBoard: (data: BoardPayload) => void;
+  ingestUsers: (users: User[]) => void;
   upsertUser: (user: User) => void;
 };
 
@@ -18,27 +19,69 @@ const initialState = {
 const BoardContext = createContext<BoardContextType>({
   state: initialState,
   ingestBoard: () => {},
+  ingestUsers: () => {},
   upsertUser: () => {},
 });
 
 export const BoardProvider = ({ children }) => {
   const [state, setState] = useState<NormalizedBoard>(initialState);
 
-  const ingestBoard = (data: BoardPayload) => {
-    setState(normalizeBoard(data));
-  };
+  const ingestBoard = useCallback((data: BoardPayload) => {
+    const normalized = normalizeBoard(data);
+    setState((prev) => {
+      const updated = {
+        usersById: { ...prev.usersById, ...normalized.usersById },
+        cardsById: { ...prev.cardsById, ...normalized.cardsById },
+        columnsById: {
+          ...prev.columnsById,
+          ...Object.fromEntries(
+            Object.entries(normalized.columnsById).map(([colId, col]) => [
+              colId,
+              {
+                id: col.id,
+                title: col.title ?? prev.columnsById[colId]?.title,
+                cardIds: col.cardIds,
+              },
+            ]),
+          ),
+        },
+        columnOrder: normalized.columnOrder,
+      };
 
-  const upsertUser = (user: User) =>
-    setState((state) => ({
-      ...state,
+      console.log(updated);
+
+      return updated;
+    });
+  }, []);
+
+  const ingestUsers = useCallback((users: User[]) => {
+    setState((prev) => ({
+      ...prev,
       usersById: {
-        ...state.usersById,
-        [user.id]: { ...state.usersById[user.id], ...user },
+        ...prev.usersById,
+        ...Object.fromEntries(
+          users.map((u) => [u.id, { ...prev.usersById[u.id], ...u }]),
+        ),
       },
     }));
+  }, []);
+
+  const upsertUser = useCallback(
+    (user: User) =>
+      setState((state) => ({
+        ...state,
+        usersById: {
+          ...state.usersById,
+          [user.id]: { ...state.usersById[user.id], ...user },
+        },
+      })),
+    [],
+  );
 
   return (
-    <BoardContext.Provider value={{ state, ingestBoard, upsertUser }}>
+    <BoardContext.Provider
+      value={{ state, ingestBoard, ingestUsers, upsertUser }}
+    >
       {children}
     </BoardContext.Provider>
   );

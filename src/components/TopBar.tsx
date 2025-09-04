@@ -1,15 +1,28 @@
 import { useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { useBoardContext } from "./BoardContext.tsx";
-import type { User } from "../types.ts";
+import type {User} from "../types.ts";
 
-export const TopBar = ({ user }: { user: User }) => {
+export const TopBar = () => {
+  const userId = 2;
+  const { state, upsertUser } = useBoardContext();
+  const user = state.usersById[userId];
+
+  if (!user) return null;
+
+  return (
+    <header className="sticky top-0 z-10 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-neutral-200">
+      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-end">
+        <UserProfilePopover key={user.id} user={user} onUpdate={upsertUser} />
+      </div>
+    </header>
+  );
+};
+
+const UserProfilePopover = ({ user, onUpdate }: { user: User; onUpdate: (user: User) => void }) => {
   const [newName, setNewName] = useState(user.name);
-  const { upsertUser } = useBoardContext();
 
   const handleSaveName = async () => {
-    if (!user) return;
-
     const res = await fetch(`/api/users/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -18,64 +31,58 @@ export const TopBar = ({ user }: { user: User }) => {
 
     if (res.ok) {
       const updated = await res.json();
-      upsertUser(updated);
+      onUpdate(updated);
     } else {
       console.error("Failed to update user");
     }
   };
 
   return (
-    <header className="sticky top-0 z-10 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-neutral-200">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-end">
-        {user && (
-          <Popover.Root>
-            <Popover.Trigger asChild>
-              <button
-                aria-label="profile"
-                className="h-10 w-10 rounded-full overflow-hidden"
-              >
-                <img
-                  src={user.avatar_url}
-                  alt={user.name}
-                  title={user.name}
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-              </button>
-            </Popover.Trigger>
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <button
+          aria-label="profile"
+          className="h-10 w-10 rounded-full overflow-hidden"
+        >
+          <img
+            src={user.avatar_url}
+            alt={user.name}
+            title={user.name}
+            className="h-10 w-10 rounded-full object-cover"
+          />
+        </button>
+      </Popover.Trigger>
 
-            <Popover.Content
-              sideOffset={5}
-              className="rounded-lg border border-neutral-200 bg-white p-4 shadow-md w-60"
+      <Popover.Content
+        sideOffset={5}
+        className="rounded-lg border border-neutral-200 bg-white p-4 shadow-md w-60"
+      >
+        <label className="block text-sm font-medium text-neutral-700 mb-2">
+          Update name
+        </label>
+        <input
+          type="text"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          className="w-full border rounded-md px-2 py-1 text-sm focus:outline-none focus:ring"
+        />
+
+        <div className="mt-3 flex justify-end gap-2">
+          <Popover.Close asChild>
+            <button className="px-3 py-1 rounded-md border text-sm">
+              Cancel
+            </button>
+          </Popover.Close>
+          <Popover.Close asChild>
+            <button
+              onClick={handleSaveName}
+              className="px-3 py-1 rounded-md bg-blue-600 text-white text-sm"
             >
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Update name
-              </label>
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="w-full border rounded-md px-2 py-1 text-sm focus:outline-none focus:ring"
-              />
-
-              <div className="mt-3 flex justify-end gap-2">
-                <Popover.Close asChild>
-                  <button className="px-3 py-1 rounded-md border text-sm">
-                    Cancel
-                  </button>
-                </Popover.Close>
-                <Popover.Close asChild>
-                  <button
-                    onClick={handleSaveName}
-                    className="px-3 py-1 rounded-md bg-blue-600 text-white text-sm"
-                  >
-                    Save
-                  </button>
-                </Popover.Close>
-              </div>
-            </Popover.Content>
-          </Popover.Root>
-        )}
-      </div>
-    </header>
+              Save
+            </button>
+          </Popover.Close>
+        </div>
+      </Popover.Content>
+    </Popover.Root>
   );
 };

@@ -41,9 +41,5 @@ export function normalizeBoard(payload: BoardPayload): NormalizedBoard {
     columnOrder.push(col.id);
   }
 
-  const normalised = { usersById, cardsById, columnsById, columnOrder };
-
-  console.log(normalised);
-
-  return normalised;
+  return { usersById, cardsById, columnsById, columnOrder };
 }
