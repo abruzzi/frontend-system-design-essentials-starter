@@ -5,6 +5,8 @@ import { useBoardContext } from "./BoardContext.tsx";
 export const BoardView = () => {
   const { state } = useBoardContext();
 
+  console.log(state);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {state.columnOrder.map((colId) => {

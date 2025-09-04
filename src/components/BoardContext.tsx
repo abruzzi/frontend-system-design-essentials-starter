@@ -28,23 +28,15 @@ export const BoardProvider = ({ children }) => {
 
   const ingestBoard = useCallback((data: BoardPayload) => {
     const normalized = normalizeBoard(data);
+
+    console.log(normalized);
+
     setState((prev) => {
       const updated = {
+        ...prev,
         usersById: { ...prev.usersById, ...normalized.usersById },
         cardsById: { ...prev.cardsById, ...normalized.cardsById },
-        columnsById: {
-          ...prev.columnsById,
-          ...Object.fromEntries(
-            Object.entries(normalized.columnsById).map(([colId, col]) => [
-              colId,
-              {
-                id: col.id,
-                title: col.title ?? prev.columnsById[colId]?.title,
-                cardIds: col.cardIds,
-              },
-            ]),
-          ),
-        },
+        columnsById: { ...prev.columnsById, ...normalized.columnsById },
         columnOrder: normalized.columnOrder,
       };
 
