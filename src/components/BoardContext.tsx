@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useState } from "react";
+import type { ReactNode } from "react";
 import type { BoardPayload, NormalizedBoard, User } from "../types.ts";
 import { normalizeBoard } from "../utils";
 
@@ -7,13 +8,16 @@ type BoardContextType = {
   ingestBoard: (data: BoardPayload) => void;
   ingestUsers: (users: User[]) => void;
   upsertUser: (user: User) => void;
+  toggleAssigneeFilter: (userId: number) => void;
+  clearAssigneeFilters: () => void;
 };
 
-const initialState = {
+const initialState: NormalizedBoard = {
   usersById: {},
   cardsById: {},
   columnsById: {},
   columnOrder: [],
+  selectedAssigneeIds: [],
 };
 
 const BoardContext = createContext<BoardContextType>({
@@ -21,9 +25,11 @@ const BoardContext = createContext<BoardContextType>({
   ingestBoard: () => {},
   ingestUsers: () => {},
   upsertUser: () => {},
+  toggleAssigneeFilter: () => {},
+  clearAssigneeFilters: () => {},
 });
 
-export const BoardProvider = ({ children }) => {
+export const BoardProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<NormalizedBoard>(initialState);
 
   const ingestBoard = useCallback((data: BoardPayload) => {
@@ -70,9 +76,32 @@ export const BoardProvider = ({ children }) => {
     [],
   );
 
+  const toggleAssigneeFilter = useCallback((userId: number) => {
+    setState((prevState) => ({
+      ...prevState,
+      selectedAssigneeIds: prevState.selectedAssigneeIds.includes(userId)
+        ? prevState.selectedAssigneeIds.filter(id => id !== userId)
+        : [...prevState.selectedAssigneeIds, userId]
+    }));
+  }, []);
+
+  const clearAssigneeFilters = useCallback(() => {
+    setState((prevState) => ({
+      ...prevState,
+      selectedAssigneeIds: []
+    }));
+  }, []);
+
   return (
     <BoardContext.Provider
-      value={{ state, ingestBoard, ingestUsers, upsertUser }}
+      value={{ 
+        state, 
+        ingestBoard, 
+        ingestUsers, 
+        upsertUser, 
+        toggleAssigneeFilter, 
+        clearAssigneeFilters 
+      }}
     >
       {children}
     </BoardContext.Provider>

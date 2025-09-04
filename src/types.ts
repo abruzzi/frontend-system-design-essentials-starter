@@ -19,6 +19,7 @@ export type NormalizedBoard = {
   cardsById: Record<string, NormalizedCard>;
   columnsById: Record<string, NormalizedColumn>;
   columnOrder: string[];
+  selectedAssigneeIds: number[];
 };
 
 type ServerCard = {

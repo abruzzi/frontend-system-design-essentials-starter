@@ -10,14 +10,23 @@ export const Board = ({ id }: { id: string }) => {
   const [view, setView] = useState<ViewType>("board");
   const [search, setSearch] = useState("");
 
-  const { ingestBoard } = useBoardContext();
+  const { ingestBoard, state } = useBoardContext();
+  const selectedAssigneeIds = state.selectedAssigneeIds;
 
   useEffect(() => {
-    const url = `/api/board/${id}${search ? `?q=${encodeURIComponent(search)}` : ""}`;
+    const params = new URLSearchParams();
+    if (search) {
+      params.append('q', search);
+    }
+    if (selectedAssigneeIds.length > 0) {
+      params.append('assigneeIds', selectedAssigneeIds.join(','));
+    }
+    
+    const url = `/api/board/${id}${params.toString() ? `?${params.toString()}` : ""}`;
     fetch(url)
       .then((r) => r.json())
       .then((data) => ingestBoard(data));
-  }, [id, search]);
+  }, [id, search, selectedAssigneeIds, ingestBoard]);
 
   return (
     <>
