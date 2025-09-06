@@ -13,7 +13,10 @@ export const Board = ({ id }: { id: string }) => {
   const { ingestBoard, state } = useBoardContext();
   const selectedAssigneeIds = state.selectedAssigneeIds;
 
+
   useEffect(() => {
+    const ctrl = new AbortController();
+
     const params = new URLSearchParams();
     if (search) {
       params.append('q', search);
@@ -23,9 +26,14 @@ export const Board = ({ id }: { id: string }) => {
     }
     
     const url = `/api/board/${id}${params.toString() ? `?${params.toString()}` : ""}`;
-    fetch(url)
+    fetch(url, { signal: ctrl.signal })
       .then((r) => r.json())
-      .then((data) => ingestBoard(data));
+      .then((data) => ingestBoard(data))
+      .catch(e => {
+        console.error(e);
+      });
+
+    return () => ctrl.abort("query changed");
   }, [id, search, selectedAssigneeIds, ingestBoard]);
 
   return (
