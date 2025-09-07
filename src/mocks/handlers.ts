@@ -93,15 +93,30 @@ export const handlers = [
     return HttpResponse.json(user);
   }),
 
-  http.get("/api/users", ({ request }) => {
+  http.get('/api/users', async ({ request }) => {
     const url = new URL(request.url);
-    const q = url.searchParams.get("query")?.trim().toLowerCase() ?? "";
+    const q = (url.searchParams.get('query') || '').trim().toLowerCase();
+    const page = Number(url.searchParams.get('page') ?? '0');
+    const pageSize = Number(url.searchParams.get('pageSize') ?? '5');
 
-    const result: User[] = q
-      ? (users as User[]).filter((u) => u.name.toLowerCase().includes(q))
+    const source: User[] = q
+      ? (users as User[]).filter(u => u.name.toLowerCase().includes(q))
       : (users as User[]);
 
-    return HttpResponse.json(result);
+    const total = source.length;
+    const start = page * pageSize;
+    const end = start + pageSize;
+    const items = source.slice(start, end);
+
+    return HttpResponse.json({
+      items,
+      pageInfo: {
+        total,
+        page,
+        pageSize,
+        hasMore: end < total,
+      }
+    });
   }),
 
   http.get("/api/board/:id", async ({ request }) => {

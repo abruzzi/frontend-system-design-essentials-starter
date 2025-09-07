@@ -3,19 +3,9 @@ import { useEffect, useState } from "react";
 import { ListView } from "./ListView.tsx";
 import { BoardView } from "./BoardView.tsx";
 import { useBoardContext } from "./BoardContext.tsx";
+import { useDebounced } from "../utils";
 
 type ViewType = "board" | "list";
-
-function useDebounced<T>(value: T, delay = 300) {
-  const [v, setV] = useState(value);
-
-  useEffect(() => {
-    const id = setTimeout(() => setV(value), delay);
-    return () => clearTimeout(id);
-  }, [value, delay]);
-
-  return v;
-}
 
 export const Board = ({ id }: { id: string }) => {
   const [view, setView] = useState<ViewType>("board");

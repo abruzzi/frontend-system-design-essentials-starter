@@ -5,6 +5,7 @@ import type {
   NormalizedColumn,
   User,
 } from "../types.ts";
+import { useEffect, useState } from "react";
 
 export function normalizeBoard(payload: BoardPayload): NormalizedBoard {
   const usersById: Record<number, User> = {};
@@ -41,5 +42,20 @@ export function normalizeBoard(payload: BoardPayload): NormalizedBoard {
     columnOrder.push(col.id);
   }
 
-  return { usersById, cardsById, columnsById, columnOrder };
+  return {
+    selectedAssigneeIds: [],
+    usersById,
+    cardsById,
+    columnsById,
+    columnOrder,
+  };
+}
+
+export function useDebounced<T>(value: T, delay = 300) {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return v;
 }
