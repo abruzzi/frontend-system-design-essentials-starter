@@ -6,35 +6,46 @@ import { useBoardContext } from "./BoardContext.tsx";
 
 type ViewType = "board" | "list";
 
+function useDebounced<T>(value: T, delay = 300) {
+  const [v, setV] = useState(value);
+
+  useEffect(() => {
+    const id = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+
+  return v;
+}
+
 export const Board = ({ id }: { id: string }) => {
   const [view, setView] = useState<ViewType>("board");
   const [search, setSearch] = useState("");
+  const debouncedKeyword = useDebounced(search);
 
   const { ingestBoard, state } = useBoardContext();
   const selectedAssigneeIds = state.selectedAssigneeIds;
-
 
   useEffect(() => {
     const ctrl = new AbortController();
 
     const params = new URLSearchParams();
-    if (search) {
-      params.append('q', search);
+    if (debouncedKeyword) {
+      params.append("q", debouncedKeyword);
     }
     if (selectedAssigneeIds.length > 0) {
-      params.append('assigneeIds', selectedAssigneeIds.join(','));
+      params.append("assigneeIds", selectedAssigneeIds.join(","));
     }
-    
+
     const url = `/api/board/${id}${params.toString() ? `?${params.toString()}` : ""}`;
     fetch(url, { signal: ctrl.signal })
       .then((r) => r.json())
       .then((data) => ingestBoard(data))
-      .catch(e => {
+      .catch((e) => {
         console.error(e);
       });
 
     return () => ctrl.abort("query changed");
-  }, [id, search, selectedAssigneeIds, ingestBoard]);
+  }, [id, debouncedKeyword, selectedAssigneeIds, ingestBoard]);
 
   return (
     <>
