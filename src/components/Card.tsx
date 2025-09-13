@@ -15,12 +15,39 @@ export const Card = ({ id, title, assignee }: CardProps) => {
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { removeCard } = useBoardContext();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { removeCard, updateCard, upsertUser } = useBoardContext();
 
-  function handleAssignUser(user: User | null) {
-    if (!user) return;
-    console.log(user);
-    setOpen(false);
+  async function handleAssignUser(user: User | null) {
+    if (isUpdating) return;
+    setIsUpdating(true);
+
+    try {
+      const payload = { assignee: user };
+      const res = await fetch(`/api/cards/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to update card ${id}`);
+      }
+
+      // Update local state
+      if (user) {
+        upsertUser(user); // Ensure user is in our local state
+        updateCard(id, { assigneeId: user.id });
+      } else {
+        updateCard(id, { assigneeId: undefined });
+      }
+
+      setOpen(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsUpdating(false);
+    }
   }
 
   async function handleDelete() {
@@ -96,8 +123,9 @@ export const Card = ({ id, title, assignee }: CardProps) => {
             <button
               type="button"
               aria-label="Open assignee picker"
+              disabled={isUpdating}
               className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-300 text-[11px] font-medium
-               hover:ring-2 hover:ring-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+               hover:ring-2 hover:ring-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
             >
               {assignee?.avatar_url ? (
                 <img
@@ -125,7 +153,10 @@ export const Card = ({ id, title, assignee }: CardProps) => {
                 Assign user
               </div>
 
-              <UserSelect selected={assignee ?? null} handleChange={handleAssignUser} />
+              <UserSelect
+                selected={assignee ?? null}
+                handleChange={handleAssignUser}
+              />
               <Popover.Arrow className="fill-white drop-shadow" />
             </Popover.Content>
           </Popover.Portal>

@@ -220,4 +220,26 @@ export const handlers = [
 
     return HttpResponse.json(newCard, { status: 201 });
   }),
+
+  http.patch("/api/cards/:id", async ({ params, request }) => {
+    const id = String(params.id);
+    const payload = (await request.json()) as Partial<Card>;
+    const data = board as BoardPayload;
+
+    for (const col of data.columns) {
+      const cardIndex = col.cards.findIndex(
+        (c) => c.id.toLowerCase() === id.toLowerCase(),
+      );
+      if (cardIndex !== -1) {
+        // Update the card with new data
+        col.cards[cardIndex] = { ...col.cards[cardIndex], ...payload };
+        return HttpResponse.json(col.cards[cardIndex]);
+      }
+    }
+
+    return HttpResponse.json(
+      { error: `Card ${id} not found` },
+      { status: 404 },
+    );
+  }),
 ];

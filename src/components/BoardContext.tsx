@@ -13,6 +13,10 @@ type BoardContextType = {
   ingestBoard: (data: BoardPayload) => void;
   ingestUsers: (users: User[]) => void;
   upsertUser: (user: User) => void;
+  updateCard: (
+    cardId: string,
+    updates: Partial<{ title: string; assigneeId?: number }>,
+  ) => void;
   removeCard: (cardId: string) => void;
   toggleAssigneeFilter: (userId: number) => void;
   clearAssigneeFilters: () => void;
@@ -32,6 +36,7 @@ const BoardContext = createContext<BoardContextType>({
   ingestBoard: () => {},
   ingestUsers: () => {},
   upsertUser: () => {},
+  updateCard: () => {},
   removeCard: () => {},
   toggleAssigneeFilter: () => {},
   clearAssigneeFilters: () => {},
@@ -95,7 +100,10 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
       const updatedColumns = Object.fromEntries(
         Object.entries(prev.columnsById).map(([colId, col]) => {
           if (!col.cardIds.includes(cardId)) return [colId, col];
-          return [colId, { ...col, cardIds: col.cardIds.filter((id) => id !== cardId) }];
+          return [
+            colId,
+            { ...col, cardIds: col.cardIds.filter((id) => id !== cardId) },
+          ];
         }),
       );
 
@@ -123,32 +131,55 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, []);
 
-  const addCard = useCallback((columnId: string, card: { id: string; title: string }) => {
-    setState((prevState: NormalizedBoard) => {
-      const updatedCardsById = {
-        ...prevState.cardsById,
-        [card.id]: {
-          id: card.id,
-          title: card.title,
-        },
-      };
+  const addCard = useCallback(
+    (columnId: string, card: { id: string; title: string }) => {
+      setState((prevState: NormalizedBoard) => {
+        const updatedCardsById = {
+          ...prevState.cardsById,
+          [card.id]: {
+            id: card.id,
+            title: card.title,
+          },
+        };
 
-      const column = prevState.columnsById[columnId];
-      const updatedColumnsById = {
-        ...prevState.columnsById,
-        [columnId]: {
-          ...column,
-          cardIds: [...column.cardIds, card.id],
-        },
-      };
+        const column = prevState.columnsById[columnId];
+        const updatedColumnsById = {
+          ...prevState.columnsById,
+          [columnId]: {
+            ...column,
+            cardIds: [...column.cardIds, card.id],
+          },
+        };
 
-      return {
-        ...prevState,
-        cardsById: updatedCardsById,
-        columnsById: updatedColumnsById,
-      };
-    });
-  }, []);
+        return {
+          ...prevState,
+          cardsById: updatedCardsById,
+          columnsById: updatedColumnsById,
+        };
+      });
+    },
+    [],
+  );
+
+  const updateCard = useCallback(
+    (
+      cardId: string,
+      updates: Partial<{ title: string; assigneeId?: number }>,
+    ) => {
+      setState((prev) => {
+        const existingCard = prev.cardsById[cardId];
+
+        return {
+          ...prev,
+          cardsById: {
+            ...prev.cardsById,
+            [cardId]: { ...existingCard, ...updates },
+          },
+        };
+      });
+    },
+    [],
+  );
 
   return (
     <BoardContext.Provider
@@ -158,6 +189,7 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
         ingestUsers,
         upsertUser,
         removeCard,
+        updateCard,
         toggleAssigneeFilter,
         clearAssigneeFilters,
         addCard,
