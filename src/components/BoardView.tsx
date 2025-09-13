@@ -21,7 +21,7 @@ export const BoardView = () => {
         return (
           <section key={column.id} className="flex flex-col gap-4">
             <h2 className="text-lg font-semibold">{column.title}</h2>
-            <BoardColumn cards={hydratedCards} />
+            <BoardColumn cards={hydratedCards} columnId={column.id} />
           </section>
         );
       })}

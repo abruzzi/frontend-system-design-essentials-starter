@@ -1,6 +1,11 @@
 import { createContext, useCallback, useContext, useState } from "react";
 import type { ReactNode } from "react";
-import type { BoardPayload, NormalizedBoard, User } from "../types.ts";
+import type {
+  BoardPayload,
+  CardType,
+  NormalizedBoard,
+  User,
+} from "../types.ts";
 import { normalizeBoard } from "../utils";
 
 type BoardContextType = {
@@ -10,6 +15,7 @@ type BoardContextType = {
   upsertUser: (user: User) => void;
   toggleAssigneeFilter: (userId: number) => void;
   clearAssigneeFilters: () => void;
+  addCard: (columnId: string, card: { id: string; title: string }) => void;
 };
 
 const initialState: NormalizedBoard = {
@@ -27,6 +33,7 @@ const BoardContext = createContext<BoardContextType>({
   upsertUser: () => {},
   toggleAssigneeFilter: () => {},
   clearAssigneeFilters: () => {},
+  addCard: () => {},
 });
 
 export const BoardProvider = ({ children }: { children: ReactNode }) => {
@@ -80,27 +87,55 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
     setState((prevState) => ({
       ...prevState,
       selectedAssigneeIds: prevState.selectedAssigneeIds.includes(userId)
-        ? prevState.selectedAssigneeIds.filter(id => id !== userId)
-        : [...prevState.selectedAssigneeIds, userId]
+        ? prevState.selectedAssigneeIds.filter((id) => id !== userId)
+        : [...prevState.selectedAssigneeIds, userId],
     }));
   }, []);
 
   const clearAssigneeFilters = useCallback(() => {
     setState((prevState) => ({
       ...prevState,
-      selectedAssigneeIds: []
+      selectedAssigneeIds: [],
     }));
+  }, []);
+
+  const addCard = useCallback((columnId: string, card: { id: string; title: string }) => {
+    setState((prevState: NormalizedBoard) => {
+      const updatedCardsById = {
+        ...prevState.cardsById,
+        [card.id]: {
+          id: card.id,
+          title: card.title,
+        },
+      };
+
+      const column = prevState.columnsById[columnId];
+      const updatedColumnsById = {
+        ...prevState.columnsById,
+        [columnId]: {
+          ...column,
+          cardIds: [...column.cardIds, card.id],
+        },
+      };
+
+      return {
+        ...prevState,
+        cardsById: updatedCardsById,
+        columnsById: updatedColumnsById,
+      };
+    });
   }, []);
 
   return (
     <BoardContext.Provider
-      value={{ 
-        state, 
-        ingestBoard, 
-        ingestUsers, 
-        upsertUser, 
-        toggleAssigneeFilter, 
-        clearAssigneeFilters 
+      value={{
+        state,
+        ingestBoard,
+        ingestUsers,
+        upsertUser,
+        toggleAssigneeFilter,
+        clearAssigneeFilters,
+        addCard,
       }}
     >
       {children}

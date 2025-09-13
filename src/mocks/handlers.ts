@@ -155,4 +155,43 @@ export const handlers = [
       column: match.column,
     });
   }),
+
+  http.post("/api/cards", async ({ request }) => {
+    const payload = (await request.json()) as { title: string; columnId: string };
+    
+    if (!payload.title || !payload.columnId) {
+      return HttpResponse.json(
+        { error: "Title and columnId are required" },
+        { status: 400 },
+      );
+    }
+
+    // Find the column to add the card to
+    const boardData = board as BoardPayload;
+    const column = boardData.columns.find(col => col.id === payload.columnId);
+    
+    if (!column) {
+      return HttpResponse.json(
+        { error: `Column ${payload.columnId} not found` },
+        { status: 404 },
+      );
+    }
+
+    const totalCards = boardData.columns.reduce((sum, col) => sum + col.cards.length, 0);
+    const newCardId = `TICKET-${totalCards + 1}`;
+    
+    // Create the new card
+    const newCard: Card = {
+      id: newCardId,
+      title: payload.title.trim(),
+    };
+
+    // Add the card to the column
+    column.cards.push(newCard);
+
+    // Add delay for realism
+    await delay(200);
+
+    return HttpResponse.json(newCard, { status: 201 });
+  }),
 ];
