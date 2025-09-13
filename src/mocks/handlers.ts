@@ -156,6 +156,32 @@ export const handlers = [
     });
   }),
 
+  http.delete("/api/cards/:id", ({ params }) => {
+    const id = String(params.id);
+    const data = board as BoardPayload;
+    let removed = false;
+
+    for (const col of data.columns) {
+      const idx = col.cards.findIndex(
+        (c) => c.id.toLowerCase() === id.toLowerCase(),
+      );
+      if (idx !== -1) {
+        col.cards.splice(idx, 1);
+        removed = true;
+        break;
+      }
+    }
+
+    if (!removed) {
+      return HttpResponse.json(
+        { error: `Card ${id} not found` },
+        { status: 404 },
+      );
+    }
+
+    return new HttpResponse({}, { status: 204 });
+  }),
+
   http.post("/api/cards", async ({ request }) => {
     const payload = (await request.json()) as { title: string; columnId: string };
     

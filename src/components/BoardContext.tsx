@@ -13,6 +13,7 @@ type BoardContextType = {
   ingestBoard: (data: BoardPayload) => void;
   ingestUsers: (users: User[]) => void;
   upsertUser: (user: User) => void;
+  removeCard: (cardId: string) => void;
   toggleAssigneeFilter: (userId: number) => void;
   clearAssigneeFilters: () => void;
   addCard: (columnId: string, card: { id: string; title: string }) => void;
@@ -31,6 +32,7 @@ const BoardContext = createContext<BoardContextType>({
   ingestBoard: () => {},
   ingestUsers: () => {},
   upsertUser: () => {},
+  removeCard: () => {},
   toggleAssigneeFilter: () => {},
   clearAssigneeFilters: () => {},
   addCard: () => {},
@@ -83,6 +85,28 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
+  const removeCard = useCallback((cardId: string) => {
+    setState((prev) => {
+      // if (!prev.cardsById[cardId]) return prev;
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [cardId]: _removed, ...restCards } = prev.cardsById;
+
+      const updatedColumns = Object.fromEntries(
+        Object.entries(prev.columnsById).map(([colId, col]) => {
+          if (!col.cardIds.includes(cardId)) return [colId, col];
+          return [colId, { ...col, cardIds: col.cardIds.filter((id) => id !== cardId) }];
+        }),
+      );
+
+      return {
+        ...prev,
+        cardsById: restCards,
+        columnsById: updatedColumns,
+      };
+    });
+  }, []);
+
   const toggleAssigneeFilter = useCallback((userId: number) => {
     setState((prevState) => ({
       ...prevState,
@@ -133,6 +157,7 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
         ingestBoard,
         ingestUsers,
         upsertUser,
+        removeCard,
         toggleAssigneeFilter,
         clearAssigneeFilters,
         addCard,
@@ -143,4 +168,5 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useBoardContext = () => useContext<BoardContextType>(BoardContext);
