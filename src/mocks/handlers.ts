@@ -93,14 +93,14 @@ export const handlers = [
     return HttpResponse.json(user);
   }),
 
-  http.get('/api/users', async ({ request }) => {
+  http.get("/api/users", async ({ request }) => {
     const url = new URL(request.url);
-    const q = (url.searchParams.get('query') || '').trim().toLowerCase();
-    const page = Number(url.searchParams.get('page') ?? '0');
-    const pageSize = Number(url.searchParams.get('pageSize') ?? '5');
+    const q = (url.searchParams.get("query") || "").trim().toLowerCase();
+    const page = Number(url.searchParams.get("page") ?? "0");
+    const pageSize = Number(url.searchParams.get("pageSize") ?? "5");
 
     const source: User[] = q
-      ? (users as User[]).filter(u => u.name.toLowerCase().includes(q))
+      ? (users as User[]).filter((u) => u.name.toLowerCase().includes(q))
       : (users as User[]);
 
     const total = source.length;
@@ -115,7 +115,7 @@ export const handlers = [
         page,
         pageSize,
         hasMore: end < total,
-      }
+      },
     });
   }),
 
@@ -183,8 +183,11 @@ export const handlers = [
   }),
 
   http.post("/api/cards", async ({ request }) => {
-    const payload = (await request.json()) as { title: string; columnId: string };
-    
+    const payload = (await request.json()) as {
+      title: string;
+      columnId: string;
+    };
+
     if (!payload.title || !payload.columnId) {
       return HttpResponse.json(
         { error: "Title and columnId are required" },
@@ -194,8 +197,8 @@ export const handlers = [
 
     // Find the column to add the card to
     const boardData = board as BoardPayload;
-    const column = boardData.columns.find(col => col.id === payload.columnId);
-    
+    const column = boardData.columns.find((col) => col.id === payload.columnId);
+
     if (!column) {
       return HttpResponse.json(
         { error: `Column ${payload.columnId} not found` },
@@ -203,9 +206,12 @@ export const handlers = [
       );
     }
 
-    const totalCards = boardData.columns.reduce((sum, col) => sum + col.cards.length, 0);
+    const totalCards = boardData.columns.reduce(
+      (sum, col) => sum + col.cards.length,
+      0,
+    );
     const newCardId = `TICKET-${totalCards + 1}`;
-    
+
     // Create the new card
     const newCard: Card = {
       id: newCardId,
@@ -229,7 +235,7 @@ export const handlers = [
     // Add delay for realism
     await delay(1000);
 
-    if(id === 'TICKET-1') {
+    if (id === "TICKET-1") {
       return HttpResponse.json(
         { error: `Internal server error` },
         { status: 500 },
@@ -240,6 +246,7 @@ export const handlers = [
       const cardIndex = col.cards.findIndex(
         (c) => c.id.toLowerCase() === id.toLowerCase(),
       );
+
       if (cardIndex !== -1) {
         // Update the card with new data
         col.cards[cardIndex] = { ...col.cards[cardIndex], ...payload };
