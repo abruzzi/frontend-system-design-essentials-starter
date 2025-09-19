@@ -226,6 +226,16 @@ export const handlers = [
     const payload = (await request.json()) as Partial<Card>;
     const data = board as BoardPayload;
 
+    // Add delay for realism
+    await delay(1000);
+
+    if(id === 'TICKET-1') {
+      return HttpResponse.json(
+        { error: `Internal server error` },
+        { status: 500 },
+      );
+    }
+
     for (const col of data.columns) {
       const cardIndex = col.cards.findIndex(
         (c) => c.id.toLowerCase() === id.toLowerCase(),

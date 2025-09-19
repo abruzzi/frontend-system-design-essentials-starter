@@ -20,7 +20,19 @@ export const Card = ({ id, title, assignee }: CardProps) => {
 
   async function handleAssignUser(user: User | null) {
     if (isUpdating) return;
+
+    const previousAssignee = assignee;
     setIsUpdating(true);
+
+    // Update local state
+    if (user) {
+      upsertUser(user); // Ensure user is in our local state
+      updateCard(id, { assigneeId: user.id });
+    } else {
+      updateCard(id, { assigneeId: undefined });
+    }
+
+    setOpen(false);
 
     try {
       const payload = { assignee: user };
@@ -33,18 +45,15 @@ export const Card = ({ id, title, assignee }: CardProps) => {
       if (!res.ok) {
         throw new Error(`Failed to update card ${id}`);
       }
-
+    } catch (err) {
+      console.error(err);
       // Update local state
-      if (user) {
-        upsertUser(user); // Ensure user is in our local state
-        updateCard(id, { assigneeId: user.id });
+      if (previousAssignee) {
+        upsertUser(previousAssignee); // Ensure user is in our local state
+        updateCard(id, { assigneeId: previousAssignee.id });
       } else {
         updateCard(id, { assigneeId: undefined });
       }
-
-      setOpen(false);
-    } catch (err) {
-      console.error(err);
     } finally {
       setIsUpdating(false);
     }
