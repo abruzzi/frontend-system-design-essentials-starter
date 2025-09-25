@@ -1,11 +1,6 @@
-import { createContext, useCallback, useContext, useState } from "react";
 import type { ReactNode } from "react";
-import type {
-  BoardPayload,
-  CardType,
-  NormalizedBoard,
-  User,
-} from "../types.ts";
+import { createContext, useCallback, useContext, useState } from "react";
+import type { BoardPayload, NormalizedBoard, User } from "../types.ts";
 import { normalizeBoard } from "../utils";
 
 type BoardContextType = {
@@ -23,7 +18,7 @@ type BoardContextType = {
   addCard: (columnId: string, card: { id: string; title: string }) => void;
 };
 
-const initialState: NormalizedBoard = {
+export const EMPTY_BOARD_STATE = {
   usersById: {},
   cardsById: {},
   columnsById: {},
@@ -32,7 +27,7 @@ const initialState: NormalizedBoard = {
 };
 
 const BoardContext = createContext<BoardContextType>({
-  state: initialState,
+  state: EMPTY_BOARD_STATE,
   ingestBoard: () => {},
   ingestUsers: () => {},
   upsertUser: () => {},
@@ -43,7 +38,13 @@ const BoardContext = createContext<BoardContextType>({
   addCard: () => {},
 });
 
-export const BoardProvider = ({ children }: { children: ReactNode }) => {
+export const BoardProvider = ({
+  initialState,
+  children,
+}: {
+  initialState: NormalizedBoard;
+  children: ReactNode;
+}) => {
   const [state, setState] = useState<NormalizedBoard>(initialState);
 
   const ingestBoard = useCallback((data: BoardPayload) => {

@@ -1,10 +1,13 @@
 import "./App.css";
-import { KanbanMockup } from "./components/BoardPage.tsx";
-import { BoardProvider } from "./components/BoardContext.tsx";
+import { BoardPage } from "./components/BoardPage.tsx";
+import {
+  BoardProvider,
+  EMPTY_BOARD_STATE,
+} from "./components/BoardContext.tsx";
 
 const App = () => (
-  <BoardProvider>
-    <KanbanMockup id="1" />
+  <BoardProvider initialState={EMPTY_BOARD_STATE}>
+    <BoardPage id="1" />
   </BoardProvider>
 );
 

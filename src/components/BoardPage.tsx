@@ -3,7 +3,7 @@ import { TopBar } from "./TopBar.tsx";
 import { useEffect } from "react";
 import { useBoardContext } from "./BoardContext.tsx";
 
-export const KanbanMockup = ({ id }: { id: string }) => {
+export const BoardPage = ({ id }: { id: string }) => {
   const { ingestBoard, ingestUsers, upsertUser, updateCard } =
     useBoardContext();
 
