@@ -1,5 +1,4 @@
 import path from "node:path";
-import fs from "node:fs";
 
 import express from "express";
 import cors from "cors";
@@ -11,7 +10,12 @@ import { BoardPayload, Card, User } from "./types.ts";
 import { filterBoard, findCardById, variableDelay } from "./utils.ts";
 import { NormalizedBoard } from "../src/types.ts";
 import { renderApp } from "../dist/server/entry-server.js";
-import { endHTML, serialize, startHTML } from "./html-helper.ts";
+import {
+  endHTML,
+  getClientAssets,
+  serialize,
+  startHTML,
+} from "./html-helper.ts";
 import { normalizeBoard } from "../src/utils";
 import { Writable } from "stream";
 
@@ -23,21 +27,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const isProd = true;
-
-// Read Vite manifest once in prod
-let manifest: Record<
-  string,
-  { file: string; css?: string[]; isEntry?: boolean }
-> | null = null;
-
-if (isProd) {
-  const mf = path.join(__dirname, "../dist/.vite/manifest.json");
-  if (fs.existsSync(mf)) {
-    manifest = JSON.parse(fs.readFileSync(mf, "utf-8"));
-  }
-}
-
 app.use(
   "/assets",
   express.static(path.join(__dirname, "../dist/assets"), {
@@ -46,38 +35,13 @@ app.use(
   }),
 );
 
-function getClientAssets() {
-  if (manifest) {
-    const entry = manifest["src/entry-client.tsx"];
-    const js = entry ? `/${entry.file}` : "/assets/entry-client.js";
-    const cssLinks = (entry?.css ?? [])
-      .map((href) => `<link rel="stylesheet" href="/${href}">`)
-      .join("");
-    const head =
-      cssLinks + (js ? `<link rel="modulepreload" href="${js}">` : "");
-    const bodyScript = js ? `<script type="module" src="${js}"></script>` : "";
-    return { head, bodyScript };
-  }
-
-  return {
-    head: `<link rel="modulepreload" href="/assets/entry-client.js">`,
-    bodyScript: `<script type="module" src="/assets/entry-client.js"></script>`,
-  };
-}
-
 // SSR route for a board page (id param)
 app.get("/board/:id", async (req, res) => {
   try {
     const boardId = String(req.params.id);
 
-    const [boardData, userData] = await Promise.all([
-      fetch(`http://${req.headers.host}/api/board/${boardId}`, {
-        headers: { cookie: req.headers.cookie ?? "" },
-      }).then((r) => r.json()),
-      fetch(`http://${req.headers.host}/api/users/2`, {
-        headers: { cookie: req.headers.cookie ?? "" },
-      }).then((r) => r.json()),
-    ]);
+    const boardData = board;
+    const userData = (users as User[]).find((u) => u.id === 2);
 
     const normalisedData = normalizeBoard(boardData);
     const initialData: NormalizedBoard = {
@@ -88,6 +52,7 @@ app.get("/board/:id", async (req, res) => {
       },
     };
 
+    // the rendering process is triggered here
     const streamObj = await renderApp(initialData, boardId);
 
     res.status(streamObj.didError() ? 500 : 200);
@@ -106,6 +71,7 @@ app.get("/board/:id", async (req, res) => {
         res.write(chunk);
         callback();
       },
+
       final(callback: (error?: Error | null) => void) {
         res.write(
           endHTML(
@@ -122,7 +88,6 @@ app.get("/board/:id", async (req, res) => {
     });
 
     streamObj.pipe(responseWriter);
-
   } catch (err) {
     console.error(err);
     res.status(500).send("SSR Error");
