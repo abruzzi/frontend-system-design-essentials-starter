@@ -4,66 +4,8 @@ import users from "./mocks/users.json";
 import board from "./mocks/board.json";
 
 import { MockEventEmitter } from "./MockEventEmitter.ts";
-
-type User = {
-  id: number;
-  name: string;
-  description: string;
-  avatar_url: string;
-};
-
-type UserLite = { id: number; name: string; avatar_url: string };
-type Card = { id: string; title: string; assignee?: UserLite };
-type Column = { id: string; title: string; cards: Card[] };
-type BoardPayload = { columns: Column[] };
-
-function variableDelay(q: string): number {
-  const base = q.startsWith("inst") ? 150 : q.startsWith("ins") ? 650 : 300;
-  const jitter = Math.floor(Math.random() * 120); // 0-119ms
-  return base + jitter;
-}
-
-function findCardById(boardData: BoardPayload, id: string) {
-  for (const col of boardData.columns) {
-    const card = col.cards.find((c) => c.id.toLowerCase() === id.toLowerCase());
-    if (card) return { card, column: { id: col.id, title: col.title } };
-  }
-  return null;
-}
-
-function filterBoard(
-  data: BoardPayload,
-  q: string,
-  assigneeIds: number[] = [],
-): BoardPayload {
-  const filteredColumns: Column[] = data.columns.map((col) => ({
-    ...col,
-    cards: col.cards.filter((c) => {
-      // Text search filter
-      let matchesTextSearch = true;
-      if (q) {
-        const needle = q.trim().toLowerCase();
-        const inTitle = c.title.toLowerCase().includes(needle);
-        const inId = c.id.toLowerCase().includes(needle);
-        const inAssignee =
-          c.assignee?.name?.toLowerCase().includes(needle) ?? false;
-        matchesTextSearch = inTitle || inId || inAssignee;
-      }
-
-      // Assignee filter
-      let matchesAssigneeFilter = true;
-      if (assigneeIds.length > 0) {
-        matchesAssigneeFilter = c.assignee
-          ? assigneeIds.includes(c.assignee.id)
-          : false;
-      }
-
-      return matchesTextSearch && matchesAssigneeFilter;
-    }),
-  }));
-
-  return { columns: filteredColumns };
-}
+import { BoardPayload, Card, User } from "./types.ts";
+import { filterBoard, findCardById, variableDelay } from "./utils.ts";
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -106,7 +48,7 @@ app.get("/api/users", async (req, res) => {
 
   const source: User[] = q
     ? (users as User[]).filter((u) => u.name.toLowerCase().includes(q))
-: (users as User[]);
+    : (users as User[]);
 
   const total = source.length;
   const start = page * pageSize;
@@ -133,9 +75,9 @@ app.get("/api/board/:id", async (req, res) => {
   const assigneeIdsParam = url.searchParams.get("assigneeIds");
   const assigneeIds: number[] = assigneeIdsParam
     ? assigneeIdsParam
-      .split(",")
-      .map((id) => parseInt(id.trim(), 10))
-      .filter((id) => !isNaN(id))
+        .split(",")
+        .map((id) => parseInt(id.trim(), 10))
+        .filter((id) => !isNaN(id))
     : [];
 
   const filtered = filterBoard(board as BoardPayload, q, assigneeIds);
