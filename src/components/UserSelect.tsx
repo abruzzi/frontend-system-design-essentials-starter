@@ -63,6 +63,10 @@ export const UserSelect = ({
 
   // Load first page and whenever search changes
   useEffect(() => {
+    if(typeof window === "undefined") {
+      return;
+    }
+
     setOptions([]);
     setHasMore(true);
     setPage(0);

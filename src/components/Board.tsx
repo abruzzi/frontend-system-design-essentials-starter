@@ -16,6 +16,10 @@ export const Board = ({ id }: { id: string }) => {
   const selectedAssigneeIds = state.selectedAssigneeIds;
 
   useEffect(() => {
+    if(typeof window === "undefined") {
+      return;
+    }
+
     const ctrl = new AbortController();
 
     const params = new URLSearchParams();

@@ -1,25 +1,44 @@
 import { useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { useBoardContext } from "./BoardContext.tsx";
-import type {User} from "../types.ts";
+import type { User } from "../types.ts";
+import { useHydrated } from "../hooks/useHydrated.ts";
 
 export const TopBar = () => {
   const userId = 2;
   const { state, upsertUser } = useBoardContext();
   const user = state.usersById[userId];
+  const isHydrated = useHydrated();
 
   if (!user) return null;
 
   return (
     <header className="sticky top-0 z-10 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-neutral-200">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-end">
-        <UserProfilePopover key={user.id} user={user} onUpdate={upsertUser} />
+        {isHydrated ? (
+          <UserProfilePopover key={user.id} user={user} onUpdate={upsertUser} />
+        ) : (
+          <div className="h-10 w-10 rounded-full overflow-hidden">
+            <img
+              src={user.avatar_url}
+              alt={user.name}
+              title={user.name}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          </div>
+        )}
       </div>
     </header>
   );
 };
 
-const UserProfilePopover = ({ user, onUpdate }: { user: User; onUpdate: (user: User) => void }) => {
+const UserProfilePopover = ({
+  user,
+  onUpdate,
+}: {
+  user: User;
+  onUpdate: (user: User) => void;
+}) => {
   const [newName, setNewName] = useState(user.name);
 
   const handleSaveName = async () => {

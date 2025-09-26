@@ -20,4 +20,7 @@ export default defineConfig({
       input: "/src/entry-client.tsx",
     },
   },
+  ssr: {
+    noExternal: ["react", "react-dom"],
+  },
 });

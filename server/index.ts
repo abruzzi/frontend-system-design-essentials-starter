@@ -6,12 +6,14 @@ import cors from "cors";
 import users from "./mocks/users.json";
 import board from "./mocks/board.json";
 
-import { MockEventEmitter } from "./MockEventEmitter.ts";
+import { MockEventEmitter } from "./mock-event-emitter.ts";
 import { BoardPayload, Card, User } from "./types.ts";
 import { filterBoard, findCardById, variableDelay } from "./utils.ts";
 import { NormalizedBoard } from "../src/types.ts";
-import { renderApp } from "./ssr.tsx";
+import { renderApp } from "../dist/server/entry-server.js";
 import { endHTML, serialize, startHTML } from "./html-helper.ts";
+import { normalizeBoard } from "../src/utils";
+import { Writable } from "stream";
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -21,13 +23,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const isProd = process.env.NODE_ENV === "production";
+const isProd = true;
 
 // Read Vite manifest once in prod
 let manifest: Record<
   string,
   { file: string; css?: string[]; isEntry?: boolean }
 > | null = null;
+
 if (isProd) {
   const mf = path.join(__dirname, "../dist/.vite/manifest.json");
   if (fs.existsSync(mf)) {
@@ -46,15 +49,16 @@ app.use(
 function getClientAssets() {
   if (manifest) {
     const entry = manifest["src/entry-client.tsx"];
-    const js = entry ? `/assets/${entry.file}` : "/assets/entry-client.js";
+    const js = entry ? `/${entry.file}` : "/assets/entry-client.js";
     const cssLinks = (entry?.css ?? [])
-      .map((href) => `<link rel="stylesheet" href="/assets/${href}">`)
+      .map((href) => `<link rel="stylesheet" href="/${href}">`)
       .join("");
     const head =
       cssLinks + (js ? `<link rel="modulepreload" href="${js}">` : "");
     const bodyScript = js ? `<script type="module" src="${js}"></script>` : "";
     return { head, bodyScript };
   }
+
   return {
     head: `<link rel="modulepreload" href="/assets/entry-client.js">`,
     bodyScript: `<script type="module" src="/assets/entry-client.js"></script>`,
@@ -66,13 +70,23 @@ app.get("/board/:id", async (req, res) => {
   try {
     const boardId = String(req.params.id);
 
-    // Fetch initial data using your existing mock APIs (forward cookies if auth)
-    const initialData = (await fetch(
-      `http://${req.headers.host}/api/board/${boardId}`,
-      {
+    const [boardData, userData] = await Promise.all([
+      fetch(`http://${req.headers.host}/api/board/${boardId}`, {
         headers: { cookie: req.headers.cookie ?? "" },
+      }).then((r) => r.json()),
+      fetch(`http://${req.headers.host}/api/users/2`, {
+        headers: { cookie: req.headers.cookie ?? "" },
+      }).then((r) => r.json()),
+    ]);
+
+    const normalisedData = normalizeBoard(boardData);
+    const initialData: NormalizedBoard = {
+      ...normalisedData,
+      usersById: {
+        ...normalisedData.usersById,
+        [userData.id]: userData,
       },
-    ).then((r) => r.json())) as NormalizedBoard;
+    };
 
     const streamObj = await renderApp(initialData, boardId);
 
@@ -82,17 +96,33 @@ app.get("/board/:id", async (req, res) => {
     const { head, bodyScript } = getClientAssets();
 
     res.write(startHTML(head));
-    streamObj.pipe(res); // stream the React HTML into #root
-    res.write(
-      endHTML(
-        // Inject the same data the client will read for hydration
-        `<script>window.__INITIAL_DATA__=${serialize(initialData)};window.__BOARD_ID__=${JSON.stringify(
-          boardId,
-        )};</script>`,
-        bodyScript,
-      ),
-    );
-    res.end();
+
+    const responseWriter = new Writable({
+      write(
+        chunk: any,
+        encoding: BufferEncoding,
+        callback: (error?: Error | null) => void,
+      ) {
+        res.write(chunk);
+        callback();
+      },
+      final(callback: (error?: Error | null) => void) {
+        res.write(
+          endHTML(
+            // Inject the same data the client will read for hydration
+            `<script>window.__INITIAL_DATA__=${serialize(initialData)};window.__BOARD_ID__=${JSON.stringify(
+              boardId,
+            )};</script>`,
+            bodyScript,
+          ),
+        );
+        res.end();
+        callback();
+      },
+    });
+
+    streamObj.pipe(responseWriter);
+
   } catch (err) {
     console.error(err);
     res.status(500).send("SSR Error");

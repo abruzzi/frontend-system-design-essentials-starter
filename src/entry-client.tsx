@@ -1,5 +1,6 @@
 // noinspection TypeScriptValidateTypes
 
+import "./App.css";
 import { hydrateRoot } from "react-dom/client";
 import {
   BoardProvider,

@@ -4,6 +4,7 @@ import { UserSelect } from "./UserSelect.tsx";
 import type { User } from "../types.ts";
 import { useBoardContext } from "./BoardContext.tsx";
 import { MoreHorizontal, Archive } from "lucide-react";
+import { useHydrated } from "../hooks/useHydrated.ts";
 
 type CardProps = {
   id: string;
@@ -17,6 +18,7 @@ export const Card = ({ id, title, assignee }: CardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const { removeCard, updateCard, upsertUser } = useBoardContext();
+  const isHydrated = useHydrated();
 
   async function handleAssignUser(user: User | null) {
     if (isUpdating) return;
@@ -84,42 +86,49 @@ export const Card = ({ id, title, assignee }: CardProps) => {
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base font-medium leading-6">{title}</h3>
 
-        <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
-          <Popover.Trigger asChild>
-            <button
-              type="button"
-              aria-label="Open card menu"
-              title="More"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-              disabled={isDeleting}
-            >
-              <MoreHorizontal className="h-4 w-4" aria-hidden />
-            </button>
-          </Popover.Trigger>
-
-          <Popover.Portal>
-            <Popover.Content
-              align="end"
-              side="bottom"
-              sideOffset={8}
-              collisionPadding={8}
-              className="z-50 w-40 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl outline-none"
-            >
+        {isHydrated ? (
+          <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
+            <Popover.Trigger asChild>
               <button
                 type="button"
-                onClick={async () => {
-                  await handleDelete();
-                  setMenuOpen(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-red-600 hover:bg-red-50"
+                aria-label="Open card menu"
+                title="More"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                disabled={isDeleting}
               >
-                <Archive className="h-4 w-4" aria-hidden />
-                Archive card
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
               </button>
-              <Popover.Arrow className="fill-white drop-shadow" />
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+            </Popover.Trigger>
+
+            <Popover.Portal>
+              <Popover.Content
+                align="end"
+                side="bottom"
+                sideOffset={8}
+                collisionPadding={8}
+                className="z-50 w-40 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl outline-none"
+              >
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await handleDelete();
+                    setMenuOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
+                  <Archive className="h-4 w-4" aria-hidden />
+                  Archive card
+                </button>
+                <Popover.Arrow className="fill-white drop-shadow" />
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
+        ) : (
+          <button type="button" aria-label="Open context menu" title="More actions" disabled={isDeleting} className="inline-flex h-7 w-7 items-center justify-center"
+          >
+            <MoreHorizontal className="h-4 w-4"></MoreHorizontal>
+          </button>
+        )}
       </div>
 
       <div className="mt-3 flex items-start justify-between">
@@ -127,49 +136,53 @@ export const Card = ({ id, title, assignee }: CardProps) => {
           {id}
         </span>
 
-        <Popover.Root open={open} onOpenChange={setOpen}>
-          <Popover.Trigger asChild>
-            <button
-              type="button"
-              aria-label="Open assignee picker"
-              disabled={isUpdating}
-              className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-300 text-[11px] font-medium
+        {isHydrated ? (
+          <Popover.Root open={open} onOpenChange={setOpen}>
+            <Popover.Trigger asChild>
+              <button
+                type="button"
+                aria-label="Open assignee picker"
+                disabled={isUpdating}
+                className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-300 text-[11px] font-medium
                hover:ring-2 hover:ring-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {assignee?.avatar_url ? (
-                <img
-                  src={assignee.avatar_url}
-                  alt={assignee.name}
-                  title={assignee.name}
-                  className="h-6 w-6 rounded-full object-cover"
+              >
+                {assignee?.avatar_url ? (
+                  <img
+                    src={assignee.avatar_url}
+                    alt={assignee.name}
+                    title={assignee.name}
+                    className="h-6 w-6 rounded-full object-cover"
+                  />
+                ) : (
+                  // fallback: initials or first letter
+                  <span>{assignee?.name?.[0] ?? "?"}</span>
+                )}
+              </button>
+            </Popover.Trigger>
+
+            <Popover.Portal>
+              <Popover.Content
+                align="end"
+                side="bottom"
+                sideOffset={8}
+                collisionPadding={8}
+                className="z-50 w-72 rounded-xl border border-neutral-200 bg-white p-3 shadow-xl outline-none"
+              >
+                <div className="mb-2 text-sm font-medium text-neutral-700">
+                  Assign user
+                </div>
+
+                <UserSelect
+                  selected={assignee ?? null}
+                  handleChange={handleAssignUser}
                 />
-              ) : (
-                // fallback: initials or first letter
-                <span>{assignee?.name?.[0] ?? "?"}</span>
-              )}
-            </button>
-          </Popover.Trigger>
-
-          <Popover.Portal>
-            <Popover.Content
-              align="end"
-              side="bottom"
-              sideOffset={8}
-              collisionPadding={8}
-              className="z-50 w-72 rounded-xl border border-neutral-200 bg-white p-3 shadow-xl outline-none"
-            >
-              <div className="mb-2 text-sm font-medium text-neutral-700">
-                Assign user
-              </div>
-
-              <UserSelect
-                selected={assignee ?? null}
-                handleChange={handleAssignUser}
-              />
-              <Popover.Arrow className="fill-white drop-shadow" />
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+                <Popover.Arrow className="fill-white drop-shadow" />
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
+        ) : (
+          <div />
+        )}
       </div>
     </article>
   );

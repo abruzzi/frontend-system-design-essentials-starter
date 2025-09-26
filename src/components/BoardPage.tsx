@@ -4,10 +4,18 @@ import { useEffect } from "react";
 import { useBoardContext } from "./BoardContext.tsx";
 
 export const BoardPage = ({ id }: { id: string }) => {
-  const { ingestBoard, ingestUsers, upsertUser, updateCard } =
+  const { state, ingestBoard, ingestUsers, upsertUser, updateCard } =
     useBoardContext();
 
   useEffect(() => {
+    const hasBoard = state.columnOrder.length > 0;
+    const hasUser = state.usersById[2];
+
+    // don't fetch when there is data already...
+    if(hasBoard && hasUser) {
+      return;
+    }
+
     Promise.all([
       fetch(`/api/users/2`).then((r) => r.json()),
       fetch(`/api/board/${id}`).then((r) => r.json()),
@@ -22,6 +30,10 @@ export const BoardPage = ({ id }: { id: string }) => {
   }, [id, ingestUsers, ingestBoard]);
 
   useEffect(() => {
+    if(typeof window === "undefined") {
+      return;
+    }
+
     const es = new EventSource(`/api/board/${id}/events`);
 
     es.onopen = () => {
