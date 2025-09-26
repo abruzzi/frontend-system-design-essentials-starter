@@ -1,3 +1,6 @@
+import path from "node:path";
+import fs from "node:fs";
+
 import express from "express";
 import cors from "cors";
 import users from "./mocks/users.json";
@@ -6,6 +9,9 @@ import board from "./mocks/board.json";
 import { MockEventEmitter } from "./MockEventEmitter.ts";
 import { BoardPayload, Card, User } from "./types.ts";
 import { filterBoard, findCardById, variableDelay } from "./utils.ts";
+import { NormalizedBoard } from "../src/types.ts";
+import { renderApp } from "./ssr.tsx";
+import { endHTML, serialize, startHTML } from "./html-helper.ts";
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -14,6 +20,86 @@ const mockEventEmitter = new MockEventEmitter();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const isProd = process.env.NODE_ENV === "production";
+
+// Read Vite manifest once in prod
+let manifest: Record<
+  string,
+  { file: string; css?: string[]; isEntry?: boolean }
+> | null = null;
+if (isProd) {
+  const mf = path.join(__dirname, "../dist/.vite/manifest.json");
+  if (fs.existsSync(mf)) {
+    manifest = JSON.parse(fs.readFileSync(mf, "utf-8"));
+  }
+}
+
+app.use(
+  "/assets",
+  express.static(path.join(__dirname, "../dist/assets"), {
+    maxAge: "1d",
+    immutable: true,
+  }),
+);
+
+function getClientAssets() {
+  if (manifest) {
+    const entry = manifest["src/entry-client.tsx"];
+    const js = entry ? `/assets/${entry.file}` : "/assets/entry-client.js";
+    const cssLinks = (entry?.css ?? [])
+      .map((href) => `<link rel="stylesheet" href="/assets/${href}">`)
+      .join("");
+    const head =
+      cssLinks + (js ? `<link rel="modulepreload" href="${js}">` : "");
+    const bodyScript = js ? `<script type="module" src="${js}"></script>` : "";
+    return { head, bodyScript };
+  }
+  return {
+    head: `<link rel="modulepreload" href="/assets/entry-client.js">`,
+    bodyScript: `<script type="module" src="/assets/entry-client.js"></script>`,
+  };
+}
+
+// SSR route for a board page (id param)
+app.get("/board/:id", async (req, res) => {
+  try {
+    const boardId = String(req.params.id);
+
+    // Fetch initial data using your existing mock APIs (forward cookies if auth)
+    const initialData = (await fetch(
+      `http://${req.headers.host}/api/board/${boardId}`,
+      {
+        headers: { cookie: req.headers.cookie ?? "" },
+      },
+    ).then((r) => r.json())) as NormalizedBoard;
+
+    const streamObj = await renderApp(initialData, boardId);
+
+    res.status(streamObj.didError() ? 500 : 200);
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+
+    const { head, bodyScript } = getClientAssets();
+
+    res.write(startHTML(head));
+    streamObj.pipe(res); // stream the React HTML into #root
+    res.write(
+      endHTML(
+        // Inject the same data the client will read for hydration
+        `<script>window.__INITIAL_DATA__=${serialize(initialData)};window.__BOARD_ID__=${JSON.stringify(
+          boardId,
+        )};</script>`,
+        bodyScript,
+      ),
+    );
+    res.end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("SSR Error");
+  }
+});
+
+app.get("/", (_req, res) => res.redirect("/board/1"));
 
 // PATCH /api/users/:id
 app.patch("/api/users/:id", async (req, res) => {

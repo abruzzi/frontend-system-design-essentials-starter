@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "jsx": "react-jsx",              // <-- critical
+    "jsxImportSource": "react",      // (optional) explicit
+
+    "lib": ["ES2022", "DOM"],        // DOM types so JSX types are OK
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmit": true                   // tsx transpiles; we don't emit here
+  },
+  "include": [
+    "server/**/*.ts",
+    "server/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx"                   // <-- ensure client TSX is compiled with react-jsx
+  ]
+}
