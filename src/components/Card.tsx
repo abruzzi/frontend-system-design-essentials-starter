@@ -1,10 +1,11 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useState } from "react";
-import { UserSelect } from "./UserSelect.tsx";
+import { fetchUsers, UserSelect } from "./UserSelect.tsx";
 import type { User } from "../types.ts";
 import { useBoardContext } from "./BoardContext.tsx";
 import { MoreHorizontal, Archive } from "lucide-react";
 import { useHydrated } from "../hooks/useHydrated.ts";
+import {usePrefetch, useQuery} from "./QueryProvider.tsx";
 
 type CardProps = {
   id: string;
@@ -81,6 +82,13 @@ export const Card = ({ id, title, assignee }: CardProps) => {
     }
   }
 
+  const prefetch = usePrefetch();
+
+  const prefetchUsers = () => {
+    console.log('Prefetching users...');
+    prefetch(`users::5:0`, () => fetchUsers(0, 5, ""), 60_000);
+  };
+
   return (
     <article className="rounded-lg border border-neutral-200 bg-white shadow-sm p-5">
       <div className="flex items-start justify-between gap-3">
@@ -124,7 +132,12 @@ export const Card = ({ id, title, assignee }: CardProps) => {
             </Popover.Portal>
           </Popover.Root>
         ) : (
-          <button type="button" aria-label="Open context menu" title="More actions" disabled={isDeleting} className="inline-flex h-7 w-7 items-center justify-center"
+          <button
+            type="button"
+            aria-label="Open context menu"
+            title="More actions"
+            disabled={isDeleting}
+            className="inline-flex h-7 w-7 items-center justify-center"
           >
             <MoreHorizontal className="h-4 w-4"></MoreHorizontal>
           </button>
@@ -143,6 +156,7 @@ export const Card = ({ id, title, assignee }: CardProps) => {
                 type="button"
                 aria-label="Open assignee picker"
                 disabled={isUpdating}
+                onMouseEnter={prefetchUsers}
                 className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-300 text-[11px] font-medium
                hover:ring-2 hover:ring-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
               >

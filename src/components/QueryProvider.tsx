@@ -19,6 +19,7 @@ interface CacheEntry<T = any> {
 interface QueryContextType {
   cache: Map<string, CacheEntry>;
   updateCache: (key: string, entry: Partial<CacheEntry>) => void;
+  prefetch: <T>(key: string, queryFn: () => Promise<T>, staleTimeMs?: number) => Promise<void>;
 }
 
 const QueryContext = createContext<QueryContextType | null>(null);
@@ -43,8 +44,66 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
+  const prefetch = useCallback(
+    async <T>(key: string, queryFn: () => Promise<T>, staleTimeMs = 60000) => {
+      // Get current cache state directly from the Map
+      const entry = cache.get(key) || {
+        data: null,
+        timestamp: 0,
+        isLoading: false,
+        error: null,
+      };
+
+      const now = Date.now();
+      const isStale = now - entry.timestamp > staleTimeMs;
+      const shouldFetch = (!entry.data && !entry.isLoading) || (isStale && !entry.isLoading);
+
+      if (!shouldFetch) {
+        console.log(`📋 Cache hit for prefetch: ${key}`);
+        return;
+      }
+
+      if (inFlightRequests.has(key)) {
+        console.log(`⏳ Request already in flight for prefetch: ${key}`);
+        return;
+      }
+
+      if (entry.isLoading) {
+        console.log(`⏳ Cache shows loading for prefetch: ${key}`);
+        return;
+      }
+
+      console.log(`🔄 Prefetching data for: ${key}`);
+
+      inFlightRequests.add(key);
+      updateCache(key, { isLoading: true, error: null });
+
+      try {
+        const data = await queryFn();
+        console.log(`✅ Prefetch successful for: ${key}`);
+
+        updateCache(key, {
+          data,
+          timestamp: Date.now(),
+          isLoading: false,
+          error: null,
+        });
+      } catch (error) {
+        console.error(`❌ Prefetch error for: ${key}`, error);
+
+        updateCache(key, {
+          isLoading: false,
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
+      } finally {
+        inFlightRequests.delete(key);
+      }
+    },
+    [updateCache, cache],
+  );
+
   return (
-    <QueryContext.Provider value={{ cache, updateCache }}>
+    <QueryContext.Provider value={{ cache, updateCache, prefetch }}>
       {children}
     </QueryContext.Provider>
   );
@@ -129,4 +188,13 @@ export function useQuery<T = any>(
     isStale,
     refetch: fetchData,
   };
+}
+
+// Hook to access prefetch functionality
+export function usePrefetch() {
+  const context = useContext(QueryContext);
+  if (!context) {
+    throw new Error("usePrefetch must be used within QueryProvider");
+  }
+  return context.prefetch;
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Select from "react-select";
 import type { User } from "../types.ts";
 import { useDebounced } from "../utils";
+import { useQuery } from "./QueryProvider.tsx";
 
 const AssigneeOption = ({ option }: { option: User }) => {
   return (
@@ -24,6 +25,24 @@ type UserSelectProps = {
   pageSize?: number;
 };
 
+type PageResult = {
+  items: User[];
+  pageInfo: { hasMore: boolean; page: number };
+};
+
+export async function fetchUsers(
+  page: number,
+  pageSize: number,
+  q: string,
+): Promise<PageResult> {
+  const url =
+    `/api/users?page=${page}&pageSize=${pageSize}` +
+    (q ? `&query=${encodeURIComponent(q)}` : "");
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to load users: ${res.status}`);
+  return res.json();
+}
+
 export const UserSelect = ({
   selected,
   handleChange,
@@ -32,50 +51,33 @@ export const UserSelect = ({
   const [options, setOptions] = useState<User[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState("");
   const debounced = useDebounced(query, 300);
 
-  const isFetchingRef = useRef(false);
-
-  async function fetchPage(nextPage: number, q: string) {
-    if (isFetchingRef.current) return;
-    isFetchingRef.current = true;
-    setIsLoading(true);
-    try {
-      const url = `/api/users?page=${nextPage}&pageSize=${pageSize}${q ? `&query=${encodeURIComponent(q)}` : ""}`;
-      const res = await fetch(url);
-      const data: {
-        items: User[];
-        pageInfo: { hasMore: boolean; page: number };
-      } = await res.json();
-
-      setOptions((prev) =>
-        nextPage === 0 ? data.items : [...prev, ...data.items],
-      );
-      setHasMore(data.pageInfo.hasMore);
-      setPage(data.pageInfo.page);
-    } finally {
-      setIsLoading(false);
-      isFetchingRef.current = false;
-    }
-  }
-
-  // Load first page and whenever search changes
+  // Reset when search or page size changes
   useEffect(() => {
-    if(typeof window === "undefined") {
-      return;
-    }
-
+    if (typeof window === "undefined") return;
     setOptions([]);
     setHasMore(true);
     setPage(0);
-    fetchPage(0, debounced);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounced, pageSize]);
 
+  // Query for the current page (keyed by page + search)
+  const { data, /* error, */ isLoading } = useQuery<PageResult>(
+    `users:${debounced}:${pageSize}:${page}`,
+    () => fetchUsers(page, pageSize ?? 5, debounced),
+    60_000,
+  );
+
+  // When a page loads, merge it into options and update paging flags
+  useEffect(() => {
+    if (!data) return;
+    setOptions((prev) => (page === 0 ? data.items : [...prev, ...data.items]));
+    setHasMore(data.pageInfo.hasMore);
+  }, [data, page]);
+
   const handleMenuScrollToBottom = () => {
-    if (!isLoading && hasMore) fetchPage(page + 1, debounced);
+    if (!isLoading && hasMore) setPage((p) => p + 1);
   };
 
   return (
