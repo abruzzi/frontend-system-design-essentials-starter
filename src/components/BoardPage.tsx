@@ -2,6 +2,8 @@ import { Board } from "./Board.tsx";
 import { TopBar } from "./TopBar.tsx";
 import { useEffect } from "react";
 import { useBoardContext } from "./BoardContext.tsx";
+import { TopBarSkeleton } from "./TopBarSkeleton.tsx";
+import { BoardSkeleton } from "./BoardSkeleton.tsx";
 
 export const BoardPage = ({ id }: { id: string }) => {
   const { state, ingestBoard, ingestUsers, upsertUser, updateCard } =
@@ -12,7 +14,7 @@ export const BoardPage = ({ id }: { id: string }) => {
     const hasUser = state.usersById[2];
 
     // don't fetch when there is data already...
-    if(hasBoard && hasUser) {
+    if (hasBoard && hasUser) {
       return;
     }
 
@@ -30,15 +32,15 @@ export const BoardPage = ({ id }: { id: string }) => {
   }, [id, ingestUsers, ingestBoard]);
 
   useEffect(() => {
-    if(typeof window === "undefined") {
+    if (typeof window === "undefined") {
       return;
     }
 
     const es = new EventSource(`/api/board/${id}/events`);
 
     es.onopen = () => {
-      console.log('sse connection opened');
-    }
+      console.log("sse connection opened");
+    };
 
     es.addEventListener("card-assigned", (event) => {
       const data = JSON.parse(event.data);
@@ -54,13 +56,22 @@ export const BoardPage = ({ id }: { id: string }) => {
 
     es.onerror = (error) => {
       console.log(`sse error: ${error}`);
-    }
+    };
 
     return () => {
-      console.log('closing');
+      console.log("closing");
       es.close();
-    }
+    };
   }, [id]);
+
+  if (state.columnOrder.length === 0) {
+    return (
+      <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+        <TopBarSkeleton />
+        <BoardSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">

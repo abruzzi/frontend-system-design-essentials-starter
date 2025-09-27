@@ -165,6 +165,8 @@ app.get("/api/board/:id", async (req, res) => {
   const ms = variableDelay(q);
   await delay(ms);
 
+  await delay(2000);
+
   return res.json(filtered);
 });
 

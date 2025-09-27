@@ -3,6 +3,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { useBoardContext } from "./BoardContext.tsx";
 import type { User } from "../types.ts";
 import { useHydrated } from "../hooks/useHydrated.ts";
+import { TopBarSkeleton } from "./TopBarSkeleton.tsx";
 
 export const TopBar = () => {
   const userId = 2;
@@ -10,7 +11,7 @@ export const TopBar = () => {
   const user = state.usersById[userId];
   const isHydrated = useHydrated();
 
-  if (!user) return null;
+  if (!user) return <TopBarSkeleton />;
 
   return (
     <header className="sticky top-0 z-10 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-neutral-200">
