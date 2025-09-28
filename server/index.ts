@@ -136,6 +136,8 @@ app.get("/api/users", async (req, res) => {
   const end = start + pageSize;
   const items = source.slice(start, end);
 
+  await delay(2000);
+
   return res.json({
     items,
     pageInfo: {
@@ -165,7 +167,7 @@ app.get("/api/board/:id", async (req, res) => {
   const ms = variableDelay(q);
   await delay(ms);
 
-  await delay(2000);
+  await delay(1000);
 
   return res.json(filtered);
 });

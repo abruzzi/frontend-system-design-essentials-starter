@@ -16,6 +16,12 @@ interface CacheEntry<T = any> {
   error: Error | null;
 }
 
+type PrefetchFn = <T>(
+  key: string,
+  queryFn: () => Promise<T>,
+  staleTimeMs?: number,
+) => Promise<void>;
+
 interface QueryContextType {
   cache: Map<string, CacheEntry>;
   updateCache: (key: string, entry: Partial<CacheEntry>) => void;
@@ -44,8 +50,8 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
-  const prefetch = useCallback(
-    async <T>(key: string, queryFn: () => Promise<T>, staleTimeMs = 60000) => {
+  const prefetch: PrefetchFn = useCallback(
+    async (key, queryFn, staleTimeMs = 60000) => {
       // Get current cache state directly from the Map
       const entry = cache.get(key) || {
         data: null,

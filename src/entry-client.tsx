@@ -8,6 +8,7 @@ import {
 } from "./components/BoardContext.tsx";
 import { BoardPage } from "./components/BoardPage.tsx";
 import type { NormalizedBoard } from "./types.ts";
+import { QueryProvider } from "./components/QueryProvider.tsx";
 
 declare global {
   interface Window {
@@ -21,7 +22,9 @@ const boardId = window.__BOARD_ID__ ?? "1";
 
 hydrateRoot(
   document.getElementById("root")!,
-  <BoardProvider initialState={initial}>
-    <BoardPage id={boardId} />
-  </BoardProvider>,
+  <QueryProvider>
+    <BoardProvider initialState={initial}>
+      <BoardPage id={boardId} />
+    </BoardProvider>
+  </QueryProvider>,
 );

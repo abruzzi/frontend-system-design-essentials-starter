@@ -4,15 +4,18 @@ import { renderToPipeableStream } from "react-dom/server";
 import { BoardProvider } from "./components/BoardContext.tsx";
 import { BoardPage } from "./components/BoardPage.tsx";
 import type { NormalizedBoard } from "./types.ts";
+import { QueryProvider } from "./components/QueryProvider.tsx";
 
 export function renderApp(initialData: NormalizedBoard, boardId: string) {
   const ABORT_DELAY = 10_000;
   let didError = false;
 
   const element = (
-    <BoardProvider initialState={initialData}>
-      <BoardPage id={boardId} />
-    </BoardProvider>
+    <QueryProvider>
+      <BoardProvider initialState={initialData}>
+        <BoardPage id={boardId} />
+      </BoardProvider>
+    </QueryProvider>
   );
 
   return new Promise<{
