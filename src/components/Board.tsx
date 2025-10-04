@@ -1,11 +1,14 @@
 import { BoardControl } from "./BoardControl.tsx";
-import { useEffect, useState } from "react";
-import { ListView } from "./ListView.tsx";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { BoardView } from "./BoardView.tsx";
 import { useBoardContext } from "./BoardContext.tsx";
 import { useDebounced } from "../utils";
 
 type ViewType = "board" | "list";
+
+const ListView = lazy(() =>
+  import("./async/ListView.tsx").then((mod) => ({ default: mod.ListView })),
+);
 
 export const Board = ({ id }: { id: string }) => {
   const [view, setView] = useState<ViewType>("board");
@@ -16,7 +19,7 @@ export const Board = ({ id }: { id: string }) => {
   const selectedAssigneeIds = state.selectedAssigneeIds;
 
   useEffect(() => {
-    if(typeof window === "undefined") {
+    if (typeof window === "undefined") {
       return;
     }
 
@@ -51,7 +54,13 @@ export const Board = ({ id }: { id: string }) => {
       />
 
       <main className="mx-auto max-w-6xl px-4 py-10 flex-1 w-full">
-        {view === "board" ? <BoardView /> : <ListView />}
+        {view === "board" ? (
+          <BoardView />
+        ) : (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ListView />
+          </Suspense>
+        )}
       </main>
     </>
   );
