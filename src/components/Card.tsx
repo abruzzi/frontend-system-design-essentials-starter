@@ -5,7 +5,7 @@ import type { User } from "../types.ts";
 import { useBoardContext } from "./BoardContext.tsx";
 import { MoreHorizontal, Archive } from "lucide-react";
 import { useHydrated } from "../hooks/useHydrated.ts";
-import {usePrefetch, useQuery} from "./QueryProvider.tsx";
+import { usePrefetch } from "./QueryProvider.tsx";
 
 type CardProps = {
   id: string;
@@ -85,7 +85,7 @@ export const Card = ({ id, title, assignee }: CardProps) => {
   const prefetch = usePrefetch();
 
   const prefetchUsers = () => {
-    console.log('Prefetching users...');
+    console.log("Prefetching users...");
     prefetch(`users::5:0`, () => fetchUsers(0, 5, ""), 60_000);
   };
 
@@ -100,7 +100,7 @@ export const Card = ({ id, title, assignee }: CardProps) => {
               <button
                 type="button"
                 aria-label="Open card menu"
-                title="More"
+                title="More actions"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                 disabled={isDeleting}
               >
