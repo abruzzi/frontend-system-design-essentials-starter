@@ -1,5 +1,5 @@
 import path from "node:path";
-import {readFileSync} from "node:fs";
+import { readFileSync } from "node:fs";
 
 import express from "express";
 import cors from "cors";
@@ -8,7 +8,11 @@ import board from "./mocks/board.json";
 
 import { MockEventEmitter } from "./mock-event-emitter.ts";
 import { BoardPayload, Card, User } from "./types.ts";
-import { filterBoard, findCardById, variableDelay } from "./utils.ts";
+import {
+  filterBoard,
+  findCardById,
+  variableDelay,
+} from "./utils.ts";
 import { NormalizedBoard } from "../src/types.ts";
 import { renderApp } from "../dist/server/entry-server.js";
 import {
@@ -26,11 +30,15 @@ function resetMockData() {
   const boardPath = path.join(__dirname, "./mocks/board.json");
   const usersPath = path.join(__dirname, "./mocks/users.json");
 
-  const freshBoard = JSON.parse(readFileSync(boardPath, "utf-8")) as BoardPayload;
+  const freshBoard = JSON.parse(
+    readFileSync(boardPath, "utf-8"),
+  ) as BoardPayload;
   const freshUsers = JSON.parse(readFileSync(usersPath, "utf-8")) as User[];
 
   // Clear and repopulate the board object
-  Object.keys(board).forEach(key => delete (board as Record<string, unknown>)[key]);
+  Object.keys(board).forEach(
+    (key) => delete (board as Record<string, unknown>)[key],
+  );
   Object.assign(board, freshBoard);
 
   // Clear and repopulate the users array
