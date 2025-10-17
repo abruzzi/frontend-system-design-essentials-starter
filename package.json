@@ -7,6 +7,8 @@
     "dev": "vite",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
+    "test:ui": "npx playwright test --ui",
+    "test:smoke": "npx playwright test smoke.spec.ts",
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "vite build --ssr src/entry-server.tsx --outDir dist/server",
