@@ -1,4 +1,5 @@
 import path from "node:path";
+import {readFileSync} from "node:fs";
 
 import express from "express";
 import cors from "cors";
@@ -21,6 +22,22 @@ import { Writable } from "stream";
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+function resetMockData() {
+  const boardPath = path.join(__dirname, "./mocks/board.json");
+  const usersPath = path.join(__dirname, "./mocks/users.json");
+
+  const freshBoard = JSON.parse(readFileSync(boardPath, "utf-8")) as BoardPayload;
+  const freshUsers = JSON.parse(readFileSync(usersPath, "utf-8")) as User[];
+
+  // Clear and repopulate the board object
+  Object.keys(board).forEach(key => delete (board as Record<string, unknown>)[key]);
+  Object.assign(board, freshBoard);
+
+  // Clear and repopulate the users array
+  (users as User[]).length = 0;
+  (users as User[]).push(...freshUsers);
+}
+
 const mockEventEmitter = new MockEventEmitter();
 
 const app = express();
@@ -34,6 +51,18 @@ app.use(
     immutable: true,
   }),
 );
+
+// Test reset endpoint - reloads mock data from JSON files
+// Only intended for use in automated tests
+app.post("/api/test/reset", (_req, res) => {
+  try {
+    resetMockData();
+    res.status(200).json({ message: "Mock data reset successfully" });
+  } catch (error) {
+    console.error("Failed to reset mock data:", error);
+    res.status(500).json({ error: "Failed to reset mock data" });
+  }
+});
 
 // SSR route for a board page (id param)
 app.get("/board/:id", async (req, res) => {
