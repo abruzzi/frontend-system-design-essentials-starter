@@ -6,6 +6,7 @@ import { useBoardContext } from "./BoardContext.tsx";
 import { MoreHorizontal, Archive } from "lucide-react";
 import { useHydrated } from "../hooks/useHydrated.ts";
 import { usePrefetch } from "./QueryProvider.tsx";
+import {ErrorBoundary} from "./ErrorBoundary.tsx";
 
 type CardProps = {
   id: string;
@@ -190,6 +191,7 @@ export const Card = ({ id, title, assignee }: CardProps) => {
                   selected={assignee ?? null}
                   handleChange={handleAssignUser}
                 />
+
                 <Popover.Arrow className="fill-white drop-shadow" />
               </Popover.Content>
             </Popover.Portal>

@@ -3,6 +3,7 @@ import type { CardType } from "../types.ts";
 import { useState, type KeyboardEvent } from "react";
 import { useBoardContext } from "./BoardContext.tsx";
 import { Plus } from "lucide-react";
+import {ErrorBoundary} from "./ErrorBoundary.tsx";
 
 type BoardColumnProps = {
   cards: CardType[];
@@ -60,7 +61,17 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
     <section className="rounded-xl bg-neutral-100 p-4 border border-neutral-200 min-h-[65vh]">
       <div className="flex flex-col gap-4">
         {cards.map((c, idx) => (
-          <Card key={idx} id={c.id} title={c.title} assignee={c.assignee} />
+          <ErrorBoundary
+            key={idx}
+            fallback={
+              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                <p className="text-sm text-red-600">Card failed to load</p>
+                <p className="text-xs text-neutral-500 mt-1">ID: {c.id}</p>
+              </div>
+            }
+          >
+            <Card id={c.id} title={c.title} assignee={c.assignee} />
+          </ErrorBoundary>
         ))}
 
         {/* Add new card UI */}
