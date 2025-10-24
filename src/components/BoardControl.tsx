@@ -26,25 +26,34 @@ export const BoardControl = ({
   onToggleView,
   search,
   onSearchChange,
-}: BoardControlProps) => (
-  <div className="w-full bg-neutral-100 border-neutral-200">
-    <div className="mx-auto max-w-6xl px-4 py-3">
-      <div className="inline-flex items-center gap-4 py-2">
-        <div className="relative w-72">
-          <SearchIcon />
-          <input
-            type="search"
-            placeholder="Search tickets (title, ID, assignee)"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full rounded-md border border-neutral-300 bg-white py-2 pl-9 pr-3 text-sm placeholder-neutral-400
-                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
+}: BoardControlProps) => {
+  const refreshBoard = async () => {
+    const res = await fetch('/api/board/1');
+    const data = await res.json();
+    console.log('Fetched board:', data);
+  };
 
-        <ViewToggle view={view} onToggle={onToggleView} />
-        <AssigneeList />
+  return (
+    <div className="w-full bg-neutral-100 border-neutral-200">
+      <div className="mx-auto max-w-6xl px-4 py-3">
+        <div className="inline-flex items-center gap-4 py-2">
+          <div className="relative w-72">
+            <SearchIcon />
+            <input
+              type="search"
+              placeholder="Search tickets (title, ID, assignee)"
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full rounded-md border border-neutral-300 bg-white py-2 pl-9 pr-3 text-sm placeholder-neutral-400
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+
+          <ViewToggle view={view} onToggle={onToggleView} />
+          <AssigneeList />
+          <button onClick={refreshBoard}>Refresh</button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};

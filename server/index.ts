@@ -204,7 +204,7 @@ app.get("/api/board/:id", async (req, res) => {
   const ms = variableDelay(q);
   await delay(ms);
 
-  await delay(1000);
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=30');
 
   return res.json(filtered);
 });
