@@ -1,6 +1,7 @@
 import React from "react";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { axe } from 'jest-axe';
 import { render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { BoardProvider, EMPTY_BOARD_STATE } from "../BoardContext";
@@ -92,6 +93,23 @@ describe("Card Component", () => {
       // Should have buttons (menu and assignee)
       const buttons = screen.getAllByRole("button");
       expect(buttons.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Card accessibility', () => {
+    it('has no WCAG violations (default state)', async () => {
+      const { container } = renderWithProviders(
+        <Card id="42" title="Refactor drag handle" assignee="Juntao" />
+      );
+
+      const results = await axe(container, {
+        rules: {
+          // Example: enable/disable rules if you have known patterns
+          'color-contrast': { enabled: true },
+        },
+      });
+
+      expect(results).toHaveNoViolations();
     });
   });
 

@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { BoardView } from "./BoardView.tsx";
 import { useBoardContext } from "./BoardContext.tsx";
 import { useDebounced } from "../utils";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts.tsx";
 
 type ViewType = "board" | "list";
 
@@ -17,6 +18,37 @@ export const Board = ({ id }: { id: string }) => {
 
   const { ingestBoard, state } = useBoardContext();
   const selectedAssigneeIds = state.selectedAssigneeIds;
+
+  useKeyboardShortcuts([
+    {
+      key: "k",
+      ctrlKey: true,
+      handler: () => {
+        // Open command palette / search
+        console.log("Open search");
+      },
+      description: "Open search",
+    },
+    {
+      key: "/",
+      handler: () => {
+        // Focus search input
+        document
+          .querySelector<HTMLInputElement>('input[type="search"]')
+          ?.focus();
+      },
+      description: "Focus search",
+    },
+    {
+      key: "?",
+      shiftKey: true,
+      handler: () => {
+        // Show keyboard shortcuts help
+        console.log("Show shortcuts");
+      },
+      description: "Show keyboard shortcuts",
+    },
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
