@@ -6,13 +6,11 @@ import cors from "cors";
 import users from "./mocks/users.json";
 import board from "./mocks/board.json";
 
+import { createHash } from "node:crypto";
+
 import { MockEventEmitter } from "./mock-event-emitter.ts";
 import { BoardPayload, Card, User } from "./types.ts";
-import {
-  filterBoard,
-  findCardById,
-  variableDelay,
-} from "./utils.ts";
+import { filterBoard, findCardById, variableDelay } from "./utils.ts";
 import { NormalizedBoard } from "../src/types.ts";
 import { renderApp } from "../dist/server/entry-server.js";
 import {
@@ -51,6 +49,8 @@ const mockEventEmitter = new MockEventEmitter();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.set("etag", false);
 
 app.use(
   "/assets",
@@ -201,10 +201,20 @@ app.get("/api/board/:id", async (req, res) => {
     : [];
 
   const filtered = filterBoard(board as BoardPayload, q, assigneeIds);
+
+  // Generate ETag from content
+  const etag = `"${createHash("md5").update(JSON.stringify(filtered), "utf8").digest("hex")}"`;
+
+  // Check if client has same version
+  if (req.headers["if-none-match"] === etag) {
+    return res.status(304).end(); // Not Modified
+  }
+
+  res.set("ETag", etag);
+  res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=30");
+
   const ms = variableDelay(q);
   await delay(ms);
-
-  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=30');
 
   return res.json(filtered);
 });
