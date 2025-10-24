@@ -7,6 +7,11 @@ import { MoreHorizontal, Archive } from "lucide-react";
 import { useHydrated } from "../hooks/useHydrated.ts";
 import { usePrefetch } from "./QueryProvider.tsx";
 import { getXSSDemoMode, MALICIOUS_PAYLOAD } from "../utils/xss-demo.ts";
+import {
+  getSanitizeDemoMode,
+  MALICIOUS_RICH_TEXT,
+  sanitizeHTML,
+} from "../utils/sanitize-demo.ts";
 
 type CardProps = {
   id: string;
@@ -90,12 +95,15 @@ export const Card = ({ id, title, assignee }: CardProps) => {
     prefetch(`users::5:0`, () => fetchUsers(0, 5, ""), 60_000);
   };
 
-  const mode = getXSSDemoMode();
-  const isDemoCard = 'TICKET-1' === id;
-  const displayTitle = isDemoCard && mode !== "off" ? MALICIOUS_PAYLOAD : title;
+  const xssDemoMode = getXSSDemoMode();
+  const sanitizeDemoMode = getSanitizeDemoMode();
+
+  const isDemoCard = "TICKET-1" === id;
+  const displayTitle =
+    isDemoCard && xssDemoMode !== "off" ? MALICIOUS_PAYLOAD : title;
 
   const renderTitle = () => {
-    if (isDemoCard && mode === "vulnerable") {
+    if (isDemoCard && xssDemoMode === "vulnerable") {
       return (
         <div className="relative">
           <h3
@@ -109,7 +117,7 @@ export const Card = ({ id, title, assignee }: CardProps) => {
       );
     }
 
-    if (isDemoCard && mode === "safe") {
+    if (isDemoCard && xssDemoMode === "safe") {
       return (
         <div className="relative">
           <h3 className="text-base font-medium leading-6">{displayTitle}</h3>
@@ -124,11 +132,58 @@ export const Card = ({ id, title, assignee }: CardProps) => {
     return <h3 className="text-base font-medium leading-6">{title}</h3>;
   };
 
+  function renderDescription() {
+    const content = MALICIOUS_RICH_TEXT;
+
+    if (isDemoCard && sanitizeDemoMode === "vulnerable") {
+      return (
+        <div className="mt-3 pt-3 border-t border-orange-200">
+          <div className="relative mb-2">
+            <div className="text-xs font-semibold text-orange-700 bg-orange-100 px-2 py-1 rounded inline-block">
+              ❌ Vulnerable: Raw dangerouslySetInnerHTML
+            </div>
+          </div>
+          <div
+            className="text-sm text-neutral-700 prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
+        </div>
+      );
+    }
+
+    if (isDemoCard && sanitizeDemoMode === "safe") {
+      const sanitized = sanitizeHTML(content);
+      return (
+        <div className="mt-3 pt-3 border-t border-emerald-200">
+          <div className="relative mb-2">
+            <div className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-1 rounded inline-block">
+              ✅ Safe: Sanitized with DOMPurify
+            </div>
+          </div>
+          <div
+            className="text-sm text-neutral-700 prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: sanitized }}
+          />
+          <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded text-xs">
+            <strong className="text-emerald-800">Inspection tip:</strong>
+            <span className="text-emerald-700">
+              {" "}
+              Open DevTools → Elements to see that &lt;script&gt;, &lt;img
+              onerror&gt;, and &lt;iframe&gt; tags were removed, but safe
+              formatting like &lt;strong&gt; and &lt;em&gt; remain.
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  }
+
   return (
     <article className="rounded-lg border border-neutral-200 bg-white shadow-sm p-5">
       <div className="flex items-start justify-between gap-3">
         {renderTitle()}
-
         {isHydrated ? (
           <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
             <Popover.Trigger asChild>
@@ -234,6 +289,8 @@ export const Card = ({ id, title, assignee }: CardProps) => {
           <div />
         )}
       </div>
+
+      {renderDescription()}
     </article>
   );
 };
