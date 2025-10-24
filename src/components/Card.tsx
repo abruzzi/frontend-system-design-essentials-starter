@@ -6,7 +6,7 @@ import { useBoardContext } from "./BoardContext.tsx";
 import { MoreHorizontal, Archive } from "lucide-react";
 import { useHydrated } from "../hooks/useHydrated.ts";
 import { usePrefetch } from "./QueryProvider.tsx";
-import {ErrorBoundary} from "./ErrorBoundary.tsx";
+import { getXSSDemoMode, MALICIOUS_PAYLOAD } from "../utils/xss-demo.ts";
 
 type CardProps = {
   id: string;
@@ -90,10 +90,44 @@ export const Card = ({ id, title, assignee }: CardProps) => {
     prefetch(`users::5:0`, () => fetchUsers(0, 5, ""), 60_000);
   };
 
+  const mode = getXSSDemoMode();
+  const isDemoCard = 'TICKET-1' === id;
+  const displayTitle = isDemoCard && mode !== "off" ? MALICIOUS_PAYLOAD : title;
+
+  const renderTitle = () => {
+    if (isDemoCard && mode === "vulnerable") {
+      return (
+        <div className="relative">
+          <h3
+            className="text-base font-medium leading-6"
+            dangerouslySetInnerHTML={{ __html: displayTitle }}
+          />
+          <span className="absolute -top-6 left-0 text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+            ❌ Vulnerable: dangerouslySetInnerHTML
+          </span>
+        </div>
+      );
+    }
+
+    if (isDemoCard && mode === "safe") {
+      return (
+        <div className="relative">
+          <h3 className="text-base font-medium leading-6">{displayTitle}</h3>
+          <span className="absolute -top-6 left-0 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+            ✅ Safe: React auto-escapes
+          </span>
+        </div>
+      );
+    }
+
+    // Normal rendering
+    return <h3 className="text-base font-medium leading-6">{title}</h3>;
+  };
+
   return (
     <article className="rounded-lg border border-neutral-200 bg-white shadow-sm p-5">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-medium leading-6">{title}</h3>
+        {renderTitle()}
 
         {isHydrated ? (
           <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>

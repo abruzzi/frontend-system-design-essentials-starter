@@ -60,6 +60,24 @@ app.use(
   }),
 );
 
+export const securityHeaders = {
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'", // Needed for CSS-in-JS
+    "img-src 'self' data: https:",
+    "connect-src 'self' https://api.example.com",
+  ].join("; "),
+};
+
+// Apply headers
+app.use((req, res, next) => {
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
+  next();
+});
+
 // Test reset endpoint - reloads mock data from JSON files
 // Only intended for use in automated tests
 app.post("/api/test/reset", (_req, res) => {
