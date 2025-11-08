@@ -4,10 +4,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { axe } from 'jest-axe';
 import { render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
-import { BoardProvider, EMPTY_BOARD_STATE } from "../BoardContext";
-import { QueryProvider } from "../QueryProvider";
+import { BoardProvider, EMPTY_BOARD_STATE } from "../../../../shared/BoardContext.tsx";
+import { QueryProvider } from "../../../../shared/QueryProvider.tsx";
 
-import { Card } from "../Card";
+import { Card } from "../Card.tsx";
 
 const mockFetch = vi.fn();
 globalThis.fetch = mockFetch as unknown as typeof fetch;

@@ -1,10 +1,10 @@
 import React from "react";
 
 import { renderToPipeableStream } from "react-dom/server";
-import { BoardProvider } from "./components/BoardContext.tsx";
-import { BoardPage } from "./components/BoardPage.tsx";
+import { BoardProvider } from "./shared/BoardContext.tsx";
+import { BoardPage } from "./board-page/BoardPage.tsx";
 import type { NormalizedBoard } from "./types.ts";
-import { QueryProvider } from "./components/QueryProvider.tsx";
+import { QueryProvider } from "./shared/QueryProvider.tsx";
 
 export function renderApp(initialData: NormalizedBoard, boardId: string) {
   const ABORT_DELAY = 10_000;

@@ -1,4 +1,4 @@
-import { CardSkeleton } from "./CardSkeleton";
+import { CardSkeleton } from "./card/CardSkeleton.tsx";
 
 export const BoardSkeleton = () => {
   return (

@@ -1,14 +1,14 @@
-import { BoardControl } from "./BoardControl.tsx";
+import { BoardControl } from "./board-control/BoardControl.tsx";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { BoardView } from "./BoardView.tsx";
-import { useBoardContext } from "./BoardContext.tsx";
-import { useDebounced } from "../utils";
-import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts.tsx";
+import { useBoardContext } from "../../shared/BoardContext.tsx";
+import { useDebounced } from "../../utils";
+import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts.tsx";
 
 type ViewType = "board" | "list";
 
 const ListView = lazy(() =>
-  import("./async/ListView.tsx").then((mod) => ({ default: mod.ListView })),
+  import("./ListView.tsx").then((mod) => ({ default: mod.ListView })),
 );
 
 export const Board = ({ id }: { id: string }) => {

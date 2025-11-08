@@ -1,6 +1,6 @@
 import { BoardColumn } from "./BoardColumn.tsx";
-import type { CardType } from "../types.ts";
-import { useBoardContext } from "./BoardContext.tsx";
+import type { CardType } from "../../types.ts";
+import { useBoardContext } from "../../shared/BoardContext.tsx";
 
 export const BoardView = () => {
   const { state } = useBoardContext();

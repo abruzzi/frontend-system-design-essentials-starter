@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Select from "react-select";
-import type { User } from "../types.ts";
-import { useDebounced } from "../utils";
-import { useQuery } from "./QueryProvider.tsx";
+import type { User } from "../../../types.ts";
+import { useDebounced } from "../../../utils";
+import { useQuery } from "../../../shared/QueryProvider.tsx";
 
 const AssigneeOption = ({ option }: { option: User }) => {
   return (

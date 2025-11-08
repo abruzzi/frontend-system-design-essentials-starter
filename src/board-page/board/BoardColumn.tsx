@@ -1,9 +1,9 @@
-import { Card } from "./Card.tsx";
-import type { CardType } from "../types.ts";
+import { Card } from "./card/Card.tsx";
+import type { CardType } from "../../types.ts";
 import { useState, type KeyboardEvent } from "react";
-import { useBoardContext } from "./BoardContext.tsx";
+import { useBoardContext } from "../../shared/BoardContext.tsx";
 import { Plus } from "lucide-react";
-import {ErrorBoundary} from "./ErrorBoundary.tsx";
+import {ErrorBoundary} from "../../shared/ErrorBoundary.tsx";
 
 type BoardColumnProps = {
   cards: CardType[];

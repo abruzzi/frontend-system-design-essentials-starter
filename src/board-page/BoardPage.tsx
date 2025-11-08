@@ -1,9 +1,9 @@
-import { Board } from "./Board.tsx";
-import { TopBar } from "./TopBar.tsx";
+import { Board } from "./board/Board.tsx";
+import { TopBar } from "./topbar/TopBar.tsx";
 import { useEffect } from "react";
-import { useBoardContext } from "./BoardContext.tsx";
-import { TopBarSkeleton } from "./TopBarSkeleton.tsx";
-import { BoardSkeleton } from "./BoardSkeleton.tsx";
+import { useBoardContext } from "../shared/BoardContext.tsx";
+import { TopBarSkeleton } from "./topbar/TopBarSkeleton.tsx";
+import { BoardSkeleton } from "./board/BoardSkeleton.tsx";
 
 export const BoardPage = ({ id }: { id: string }) => {
   const { state, ingestBoard, ingestUsers, upsertUser, updateCard } =

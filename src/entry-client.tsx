@@ -5,10 +5,10 @@ import { hydrateRoot } from "react-dom/client";
 import {
   BoardProvider,
   EMPTY_BOARD_STATE,
-} from "./components/BoardContext.tsx";
-import { BoardPage } from "./components/BoardPage.tsx";
+} from "./shared/BoardContext.tsx";
+import { BoardPage } from "./board-page/BoardPage.tsx";
 import type { NormalizedBoard } from "./types.ts";
-import { QueryProvider } from "./components/QueryProvider.tsx";
+import { QueryProvider } from "./shared/QueryProvider.tsx";
 
 declare global {
   interface Window {

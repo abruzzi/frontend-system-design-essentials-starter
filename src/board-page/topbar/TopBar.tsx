@@ -1,12 +1,12 @@
-import { useBoardContext } from "./BoardContext.tsx";
-import { useHydrated } from "../hooks/useHydrated.ts";
+import { useBoardContext } from "../../shared/BoardContext.tsx";
+import { useHydrated } from "../../hooks/useHydrated.ts";
 import { TopBarSkeleton } from "./TopBarSkeleton.tsx";
 
 import { lazy, Suspense } from "react";
-import type {User} from "../types.ts";
+import type {User} from "../../types.ts";
 
 const UserProfilePopover = lazy(() =>
-  import("./async/UserProfilePopover.tsx").then((mod) => ({
+  import("./UserProfilePopover.tsx").then((mod) => ({
     default: mod.UserProfilePopover,
   })),
 );

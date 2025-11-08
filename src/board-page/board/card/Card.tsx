@@ -1,11 +1,11 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useState } from "react";
 import { fetchUsers, UserSelect } from "./UserSelect.tsx";
-import type { User } from "../types.ts";
-import { useBoardContext } from "./BoardContext.tsx";
+import type { User } from "../../../types.ts";
+import { useBoardContext } from "../../../shared/BoardContext.tsx";
 import { MoreHorizontal, Archive } from "lucide-react";
-import { useHydrated } from "../hooks/useHydrated.ts";
-import { usePrefetch } from "./QueryProvider.tsx";
+import { useHydrated } from "../../../hooks/useHydrated.ts";
+import { usePrefetch } from "../../../shared/QueryProvider.tsx";
 
 type CardProps = {
   id: string;

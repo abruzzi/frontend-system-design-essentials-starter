@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { useBoardContext } from "./BoardContext";
-import type { User } from "../types";
+import { useBoardContext } from "../../../shared/BoardContext.tsx";
+import type { User } from "../../../types.ts";
 
 const UserAvatar = ({ user, isSelected, onClick }: { 
   user: User; 

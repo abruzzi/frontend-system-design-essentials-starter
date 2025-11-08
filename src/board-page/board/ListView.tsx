@@ -1,4 +1,4 @@
-import { useBoardContext } from "../BoardContext.tsx";
+import { useBoardContext } from "../../shared/BoardContext.tsx";
 
 export const ListView = () => {
   const { state } = useBoardContext();
