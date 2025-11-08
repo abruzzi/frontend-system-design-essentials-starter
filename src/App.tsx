@@ -5,14 +5,10 @@ import {
   EMPTY_BOARD_STATE,
 } from "./components/BoardContext.tsx";
 import { QueryProvider } from "./components/QueryProvider.tsx";
-import { XSSBanner } from "./components/XSSBanner.tsx";
-import { SanitizeBanner } from "./components/SanitizeBanner.tsx";
 
 const App = () => (
   <QueryProvider>
     <BoardProvider initialState={EMPTY_BOARD_STATE}>
-      <XSSBanner />
-      <SanitizeBanner />
       <BoardPage id="1" />
     </BoardProvider>
   </QueryProvider>

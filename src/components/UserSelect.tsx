@@ -80,10 +80,6 @@ export const UserSelect = ({
     if (!isLoading && hasMore) setPage((p) => p + 1);
   };
 
-  if(page === 0) {
-    throw new Error("oops, page cannot be 0");
-  }
-
   return (
     <Select<User, false>
       autoFocus
