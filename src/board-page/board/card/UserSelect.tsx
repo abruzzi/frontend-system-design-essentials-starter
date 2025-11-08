@@ -82,7 +82,6 @@ export const UserSelect = ({
 
   return (
     <Select<User, false>
-      autoFocus
       classNamePrefix="rs"
       options={options}
       value={selected}

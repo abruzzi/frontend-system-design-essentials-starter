@@ -1,17 +1,24 @@
 import * as Popover from "@radix-ui/react-popover";
-import { useState } from "react";
+import {lazy, LegacyRef, Suspense, useEffect, useRef, useState} from "react";
 import { fetchUsers, UserSelect } from "./UserSelect.tsx";
 import type { User } from "../../../types.ts";
 import { useBoardContext } from "../../../shared/BoardContext.tsx";
 import { MoreHorizontal, Archive } from "lucide-react";
 import { useHydrated } from "../../../hooks/useHydrated.ts";
 import { usePrefetch } from "../../../shared/QueryProvider.tsx";
+import { CardEditModalSkeleton } from "./edit-modal/CardEditModalSkeleton.tsx";
 
 type CardProps = {
   id: string;
   title: string;
   assignee?: User;
 };
+
+const CardEditModal = lazy(() =>
+  import("./edit-modal/CardEditModal.tsx").then((mod) => ({
+    default: mod.CardEditModal,
+  })),
+);
 
 export const Card = ({ id, title, assignee }: CardProps) => {
   const [open, setOpen] = useState(false);
@@ -20,6 +27,59 @@ export const Card = ({ id, title, assignee }: CardProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const { removeCard, updateCard, upsertUser } = useBoardContext();
   const isHydrated = useHydrated();
+
+  const [isModalOpen, setModalOpen] = useState(false);
+
+  const cardRef = useRef<HTMLElement | null>(null);
+
+  const handleCardClick = (e: MouseEvent) => {
+    // Don't open modal if clicking on interactive elements
+    const target = e.target as HTMLElement;
+
+    if (
+      target.tagName === "BUTTON" ||
+      target.closest("button") ||
+      target.closest('[class*="rs__"]') || // react-select components (uses double underscore)
+      target.closest('[id*="react-select"]') || // react-select input
+      target.closest('[class*="rs-"]') // fallback for other react-select patterns
+    ) {
+      return;
+    }
+
+    if (!isUpdating && !isDeleting) {
+      setModalOpen(true);
+    }
+  };
+
+  const handleCardKeyDown = (e: KeyboardEvent) => {
+    // Open modal on Enter or Space
+    const target = e.target as HTMLElement;
+
+    if (
+      target.tagName === "BUTTON" ||
+      target.closest("button") ||
+      target.closest('[class*="rs__"]') || // react-select components (uses double underscore)
+      target.closest('[id*="react-select"]') || // react-select input
+      target.closest('[class*="rs-"]') // fallback for other react-select patterns
+    ) {
+      return;
+    }
+
+    if ((e.key === "Enter" || e.key === " ") && !isUpdating && !isDeleting) {
+      e.preventDefault();
+      setModalOpen(true);
+    }
+  };
+
+  // Focus back to card when modal closes
+  useEffect(() => {
+    if (!isModalOpen && cardRef.current) {
+      // Use setTimeout to ensure focus happens after modal unmounts
+      setTimeout(() => {
+        cardRef.current?.focus();
+      }, 0);
+    }
+  }, [isModalOpen]);
 
   async function handleAssignUser(user: User | null) {
     if (isUpdating) return;
@@ -90,7 +150,13 @@ export const Card = ({ id, title, assignee }: CardProps) => {
   };
 
   return (
-    <article className="rounded-lg border border-neutral-200 bg-white shadow-sm p-5">
+    <article
+      ref={cardRef}
+      tabIndex={0}
+      className="rounded-lg border border-neutral-200 bg-white shadow-sm p-5"
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+    >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base font-medium leading-6">{title}</h3>
         {isHydrated ? (
@@ -198,6 +264,19 @@ export const Card = ({ id, title, assignee }: CardProps) => {
           <div />
         )}
       </div>
+
+      {isModalOpen && (
+        <Suspense fallback={<CardEditModalSkeleton />}>
+          <CardEditModal
+            cardId={id}
+            title={title}
+            description={""}
+            assignee={assignee}
+            open={isModalOpen}
+            onOpenChange={setModalOpen}
+          />
+        </Suspense>
+      )}
     </article>
   );
 };
