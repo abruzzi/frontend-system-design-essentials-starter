@@ -1,9 +1,9 @@
-import { Card } from "./card/Card.tsx";
 import type { CardType } from "../../types.ts";
 import { useState, type KeyboardEvent } from "react";
 import { useBoardContext } from "../../shared/BoardContext.tsx";
 import { Plus } from "lucide-react";
-import {ErrorBoundary} from "../../shared/ErrorBoundary.tsx";
+import { ErrorBoundary } from "../../shared/ErrorBoundary.tsx";
+import { DraggableCard } from "./card/DraggableCard.tsx";
 
 type BoardColumnProps = {
   cards: CardType[];
@@ -57,6 +57,29 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
     }
   };
 
+  const { moveCard } = useBoardContext();
+
+  const handleMove = (
+    cardId: string,
+    fromColumnId: string,
+    toColumnId: string,
+    fromIndex: number,
+    toIndex: number,
+  ) => {
+    // Update UI optimistically
+    moveCard(cardId, fromColumnId, toColumnId, fromIndex, toIndex);
+
+    // Sync with backend
+    fetch(`/api/cards/${cardId}/move`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fromColumnId, toColumnId, fromIndex, toIndex }),
+    }).catch((err) => {
+      console.error("Failed to move card:", err);
+      // Could add error handling/revert logic here
+    });
+  };
+
   return (
     <section className="rounded-xl bg-neutral-100 p-4 border border-neutral-200 min-h-[65vh]">
       <div className="flex flex-col gap-4">
@@ -70,7 +93,15 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
               </div>
             }
           >
-            <Card id={c.id} title={c.title} assignee={c.assignee} />
+            <DraggableCard
+              id={c.id}
+              title={c.title}
+              description={c.description}
+              assignee={c.assignee}
+              columnId={columnId}
+              index={idx}
+              onMove={handleMove}
+            />
           </ErrorBoundary>
         ))}
 
