@@ -54,6 +54,21 @@ export const BoardPage = ({ id }: { id: string }) => {
       }
     });
 
+    es.addEventListener("card-updated", (event) => {
+      const data = JSON.parse(event.data);
+      const { id: cardId, title, description, assignee: user } = data;
+
+      if (user) {
+        upsertUser(user);
+      }
+
+      updateCard(cardId, {
+        title,
+        description,
+        assigneeId: user?.id,
+      });
+    });
+
     es.onerror = (error) => {
       console.log(`sse error: ${error}`);
     };

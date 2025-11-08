@@ -1,10 +1,16 @@
 export type User = { id: number; name: string; avatar_url: string };
 
-export type CardType = { id: string; title: string, assignee?: User };
+export type CardType = {
+  id: string;
+  title: string;
+  description?: string;
+  assignee?: User;
+};
 
 export type NormalizedCard = {
   id: string;
   title: string;
+  description?: string;
   assigneeId?: number;
 };
 
@@ -25,6 +31,7 @@ export type NormalizedBoard = {
 type ServerCard = {
   id: string;
   title: string;
+  description?: string;
   assignee?: User;
 };
 

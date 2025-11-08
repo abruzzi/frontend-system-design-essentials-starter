@@ -10,15 +10,26 @@ type BoardContextType = {
   upsertUser: (user: User) => void;
   updateCard: (
     cardId: string,
-    updates: Partial<{ title: string; assigneeId?: number }>,
+    updates: Partial<{
+      title: string;
+      description?: string;
+      assigneeId?: number;
+    }>,
   ) => void;
   removeCard: (cardId: string) => void;
   toggleAssigneeFilter: (userId: number) => void;
   clearAssigneeFilters: () => void;
   addCard: (columnId: string, card: { id: string; title: string }) => void;
+  moveCard: (
+    cardId: string,
+    fromColumnId: string,
+    toColumnId: string,
+    fromIndex: number,
+    toIndex: number,
+  ) => void;
 };
 
-export const EMPTY_BOARD_STATE = {
+export const EMPTY_BOARD_STATE: NormalizedBoard = {
   usersById: {},
   cardsById: {},
   columnsById: {},
@@ -36,6 +47,7 @@ const BoardContext = createContext<BoardContextType>({
   toggleAssigneeFilter: () => {},
   clearAssigneeFilters: () => {},
   addCard: () => {},
+  moveCard: () => {},
 });
 
 export const BoardProvider = ({
@@ -134,7 +146,7 @@ export const BoardProvider = ({
 
   const addCard = useCallback(
     (columnId: string, card: { id: string; title: string }) => {
-      setState((prevState: NormalizedBoard) => {
+      setState((prevState) => {
         const updatedCardsById = {
           ...prevState.cardsById,
           [card.id]: {
@@ -165,7 +177,11 @@ export const BoardProvider = ({
   const updateCard = useCallback(
     (
       cardId: string,
-      updates: Partial<{ title: string; assigneeId?: number }>,
+      updates: Partial<{
+        title: string;
+        description?: string;
+        assigneeId?: number;
+      }>,
     ) => {
       setState((prev) => {
         const existingCard = prev.cardsById[cardId];
@@ -177,6 +193,57 @@ export const BoardProvider = ({
             [cardId]: { ...existingCard, ...updates },
           },
         };
+      });
+    },
+    [],
+  );
+
+  const moveCard = useCallback(
+    (
+      cardId: string,
+      fromColumnId: string,
+      toColumnId: string,
+      fromIndex: number,
+      toIndex: number,
+    ) => {
+      setState((prev: NormalizedBoard): NormalizedBoard => {
+        const fromColumn = prev.columnsById[fromColumnId];
+        const toColumn = prev.columnsById[toColumnId];
+
+        if (!fromColumn || !toColumn) return prev;
+
+        const isSameColumn = fromColumnId === toColumnId;
+
+        if (isSameColumn) {
+          // Reorder within same column
+          const updatedCardIds = [...fromColumn.cardIds];
+          const [movedCard] = updatedCardIds.splice(fromIndex, 1);
+          updatedCardIds.splice(toIndex, 0, movedCard);
+
+          return {
+            ...prev,
+            columnsById: {
+              ...prev.columnsById,
+              [fromColumnId]: { ...fromColumn, cardIds: updatedCardIds },
+            },
+          };
+        } else {
+          // Move between columns
+          const updatedFromCardIds = fromColumn.cardIds.filter(
+            (_, index) => index !== fromIndex,
+          );
+          const updatedToCardIds = [...toColumn.cardIds];
+          updatedToCardIds.splice(toIndex, 0, cardId);
+
+          return {
+            ...prev,
+            columnsById: {
+              ...prev.columnsById,
+              [fromColumnId]: { ...fromColumn, cardIds: updatedFromCardIds },
+              [toColumnId]: { ...toColumn, cardIds: updatedToCardIds },
+            },
+          };
+        }
       });
     },
     [],
@@ -194,6 +261,7 @@ export const BoardProvider = ({
         toggleAssigneeFilter,
         clearAssigneeFilters,
         addCard,
+        moveCard,
       }}
     >
       {children}

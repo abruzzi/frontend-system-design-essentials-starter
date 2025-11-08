@@ -330,16 +330,56 @@ app.patch("/api/cards/:id", async (req, res) => {
 
     if (cardIndex !== -1) {
       // Update the card with new data
-      col.cards[cardIndex] = { ...col.cards[cardIndex], ...payload };
+      const updatedCard = { ...col.cards[cardIndex], ...payload };
+      col.cards[cardIndex] = updatedCard;
 
-      // broadcast the change (unchanged event name)
-      mockEventEmitter.emit("card-assigned", col.cards[cardIndex]);
+      // Emit update event for title or description changes
+      if (payload.title || payload.description) {
+        mockEventEmitter.emit("card-updated", updatedCard);
+      } else {
+        mockEventEmitter.emit("card-assigned", updatedCard);
+      }
 
-      return res.json(col.cards[cardIndex]);
+      return res.json(updatedCard);
     }
   }
 
   return res.status(404).json({ error: `Card ${id} not found` });
+});
+
+// PATCH /api/cards/:id/move
+app.patch("/api/cards/:id/move", async (req, res) => {
+  const id = String(req.params.id);
+  const payload = req.body as {
+    fromColumnId: string;
+    toColumnId: string;
+    fromIndex: number;
+    toIndex: number;
+  };
+  const data = board as BoardPayload;
+
+  await delay(500);
+
+  const fromColumn = data.columns.find((col) => col.id === payload.fromColumnId);
+  const toColumn = data.columns.find((col) => col.id === payload.toColumnId);
+
+  if (!fromColumn || !toColumn) {
+    return res.status(404).json({ error: "Column not found" });
+  }
+
+  // Find the card
+  const cardToMove = fromColumn.cards[payload.fromIndex];
+  if (!cardToMove || cardToMove.id !== id) {
+    return res.status(404).json({ error: "Card not found" });
+  }
+
+  // Remove from source
+  fromColumn.cards.splice(payload.fromIndex, 1);
+
+  // Add to destination
+  toColumn.cards.splice(payload.toIndex, 0, cardToMove);
+
+  return res.json(cardToMove);
 });
 
 // GET /api/board/:id/events  (SSE)
@@ -369,7 +409,12 @@ app.get("/api/board/:id/events", async (req, res) => {
     sendEvent("card-assigned", data);
   };
 
+  const handleCardUpdated = (data: any) => {
+    sendEvent("card-updated", data);
+  };
+
   mockEventEmitter.on("card-assigned", handleCardAssigned);
+  mockEventEmitter.on("card-updated", handleCardUpdated);
 
   // heartbeats (keeps proxies happy)
   const heartbeat = setInterval(() => res.write(`: keep-alive\n\n`), 15_000);
@@ -378,6 +423,7 @@ app.get("/api/board/:id/events", async (req, res) => {
   req.on("close", () => {
     clearInterval(heartbeat);
     mockEventEmitter.off("card-assigned", handleCardAssigned);
+    mockEventEmitter.off("card-updated", handleCardUpdated);
     res.end();
   });
 });
