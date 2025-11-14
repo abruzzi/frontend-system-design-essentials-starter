@@ -5,13 +5,13 @@ import express from "express";
 import cors from "cors";
 import users from "./mocks/users.json";
 import board from "./mocks/board.json";
+import boards from "./mocks/boards.json";
 
 import { createHash } from "node:crypto";
 
 import { MockEventEmitter } from "./mock-event-emitter.ts";
 import { BoardPayload, Card, User } from "./types.ts";
 import { filterBoard, findCardById, variableDelay } from "./utils.ts";
-import { NormalizedBoard } from "../src/types.ts";
 import { renderApp } from "../dist/server/entry-server.js";
 import {
   endHTML,
@@ -19,7 +19,6 @@ import {
   serialize,
   startHTML,
 } from "./html-helper.ts";
-import { normalizeBoard } from "../src/utils";
 import { Writable } from "stream";
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -90,25 +89,13 @@ app.post("/api/test/reset", (_req, res) => {
   }
 });
 
-// SSR route for a board page (id param)
-app.get("/board/:id", async (req, res) => {
+// SSR route handler for all pages
+app.get(["/", "/your-work", "/board/:id", "/settings"], async (req, res) => {
   try {
-    const boardId = String(req.params.id);
-
-    const boardData = board;
-    const userData = (users as User[]).find((u) => u.id === 2);
-
-    const normalisedData = normalizeBoard(boardData);
-    const initialData: NormalizedBoard = {
-      ...normalisedData,
-      usersById: {
-        ...normalisedData.usersById,
-        [userData.id]: userData,
-      },
-    };
+    const url = req.originalUrl;
 
     // the rendering process is triggered here
-    const streamObj = await renderApp(initialData, boardId);
+    const streamObj = await renderApp(url);
 
     res.status(streamObj.didError() ? 500 : 200);
     res.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -128,15 +115,7 @@ app.get("/board/:id", async (req, res) => {
       },
 
       final(callback: (error?: Error | null) => void) {
-        res.write(
-          endHTML(
-            // Inject the same data the client will read for hydration
-            `<script>window.__INITIAL_DATA__=${serialize(initialData)};window.__BOARD_ID__=${JSON.stringify(
-              boardId,
-            )};</script>`,
-            bodyScript,
-          ),
-        );
+        res.write(endHTML("", bodyScript));
         res.end();
         callback();
       },
@@ -149,7 +128,12 @@ app.get("/board/:id", async (req, res) => {
   }
 });
 
-app.get("/", (_req, res) => res.redirect("/board/1"));
+// GET /api/boards - List all boards
+app.get("/api/boards", async (req, res) => {
+  await delay(300);
+  return res.json(boards);
+});
+
 
 // PATCH /api/users/:id
 app.patch("/api/users/:id", async (req, res) => {

@@ -32,6 +32,6 @@ export default defineConfig({
     },
   },
   ssr: {
-    noExternal: ["react", "react-dom"],
+    noExternal: ["react", "react-dom", "react-router-dom", "react-router"],
   },
 });

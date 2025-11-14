@@ -1,11 +1,14 @@
 import { Board } from "./board/Board.tsx";
 import { TopBar } from "./topbar/TopBar.tsx";
 import { useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useBoardContext } from "../shared/BoardContext.tsx";
 import { TopBarSkeleton } from "./topbar/TopBarSkeleton.tsx";
 import { BoardSkeleton } from "./board/BoardSkeleton.tsx";
 
-export const BoardPage = ({ id }: { id: string }) => {
+export const BoardPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const boardId = id || "1";
   const { state, ingestBoard, ingestUsers, upsertUser, updateCard } =
     useBoardContext();
 
@@ -20,7 +23,7 @@ export const BoardPage = ({ id }: { id: string }) => {
 
     Promise.all([
       fetch(`/api/users/2`).then((r) => r.json()),
-      fetch(`/api/board/${id}`).then((r) => r.json()),
+      fetch(`/api/board/${boardId}`).then((r) => r.json()),
     ])
       .then(([user, board]) => {
         ingestUsers([user]);
@@ -29,14 +32,14 @@ export const BoardPage = ({ id }: { id: string }) => {
       .catch((err) => {
         console.error("fetch failed", err);
       });
-  }, [id, ingestUsers, ingestBoard]);
+  }, [boardId, ingestUsers, ingestBoard]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
 
-    const es = new EventSource(`/api/board/${id}/events`);
+    const es = new EventSource(`/api/board/${boardId}/events`);
 
     es.onopen = () => {
       console.log("sse connection opened");
@@ -77,7 +80,7 @@ export const BoardPage = ({ id }: { id: string }) => {
       console.log("closing");
       es.close();
     };
-  }, [id]);
+  }, [boardId, upsertUser, updateCard]);
 
   if (state.columnOrder.length === 0) {
     return (
@@ -91,7 +94,7 @@ export const BoardPage = ({ id }: { id: string }) => {
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
       <TopBar />
-      <Board id={id} />
+      <Board id={boardId} />
     </div>
   );
 };

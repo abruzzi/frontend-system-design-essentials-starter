@@ -119,6 +119,40 @@ export const handlers = [
     });
   }),
 
+  http.get("/api/boards", async () => {
+    await delay(300);
+    return HttpResponse.json([
+      {
+        id: "1",
+        name: "Product Development",
+        description: "Main product development board",
+        cardCount: 12,
+        lastUpdated: "2024-01-15T10:30:00Z",
+      },
+      {
+        id: "2",
+        name: "Marketing Campaign",
+        description: "Q1 marketing initiatives and campaigns",
+        cardCount: 8,
+        lastUpdated: "2024-01-14T15:20:00Z",
+      },
+      {
+        id: "3",
+        name: "Bug Fixes",
+        description: "Critical bug fixes and hotfixes",
+        cardCount: 5,
+        lastUpdated: "2024-01-15T09:15:00Z",
+      },
+      {
+        id: "4",
+        name: "Infrastructure",
+        description: "DevOps and infrastructure improvements",
+        cardCount: 15,
+        lastUpdated: "2024-01-13T14:45:00Z",
+      },
+    ]);
+  }),
+
   http.get("/api/board/:id", async ({ request }) => {
     const url = new URL(request.url);
     const q = url.searchParams.get("q") ?? "";

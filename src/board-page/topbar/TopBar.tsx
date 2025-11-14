@@ -1,9 +1,11 @@
 import { useBoardContext } from "../../shared/BoardContext.tsx";
 import { useHydrated } from "../../hooks/useHydrated.ts";
 import { TopBarSkeleton } from "./TopBarSkeleton.tsx";
+import { Link, useLocation } from "react-router-dom";
 
 import { lazy, Suspense } from "react";
 import type {User} from "../../types.ts";
+import { LayoutGrid } from "lucide-react";
 
 const UserProfilePopover = lazy(() =>
   import("./UserProfilePopover.tsx").then((mod) => ({
@@ -29,23 +31,41 @@ export const TopBar = () => {
   const { state, upsertUser } = useBoardContext();
   const user = state.usersById[userId];
   const isHydrated = useHydrated();
+  const location = useLocation();
 
   if (!user) return <TopBarSkeleton />;
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <header className="sticky top-0 z-10 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-neutral-200">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-end">
-        {isHydrated ? (
-          <Suspense fallback={<UserAvatar user={user} />}>
-            <UserProfilePopover
-              key={user.id}
-              user={user}
-              onUpdate={upsertUser}
-            />
-          </Suspense>
-        ) : (
-          <UserAvatar user={user} />
-        )}
+      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+        <nav className="flex items-center gap-6">
+          <Link
+            to="/your-work"
+            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              isActive("/your-work") || isActive("/")
+                ? "bg-indigo-50 text-indigo-700"
+                : "text-neutral-700 hover:bg-neutral-100"
+            }`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Your Work
+          </Link>
+        </nav>
+        <div>
+          {isHydrated ? (
+            <Suspense fallback={<UserAvatar user={user} />}>
+              <UserProfilePopover
+                key={user.id}
+                user={user}
+                onUpdate={upsertUser}
+              />
+            </Suspense>
+          ) : (
+            <UserAvatar user={user} />
+          )}
+        </div>
       </div>
     </header>
   );

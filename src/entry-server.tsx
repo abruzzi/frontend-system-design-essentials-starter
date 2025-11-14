@@ -1,21 +1,17 @@
 import React from "react";
 
 import { renderToPipeableStream } from "react-dom/server";
-import { BoardProvider } from "./shared/BoardContext.tsx";
-import { BoardPage } from "./board-page/BoardPage.tsx";
-import type { NormalizedBoard } from "./types.ts";
-import { QueryProvider } from "./shared/QueryProvider.tsx";
+import { StaticRouter } from "react-router";
+import App from "./App.tsx";
 
-export function renderApp(initialData: NormalizedBoard, boardId: string) {
+export function renderApp(url: string) {
   const ABORT_DELAY = 10_000;
   let didError = false;
 
   const element = (
-    <QueryProvider>
-      <BoardProvider initialState={initialData}>
-        <BoardPage id={boardId} />
-      </BoardProvider>
-    </QueryProvider>
+    <StaticRouter location={url}>
+      <App />
+    </StaticRouter>
   );
 
   return new Promise<{
