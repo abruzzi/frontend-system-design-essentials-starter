@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 
 import { renderToPipeableStream } from "react-dom/server";
 import { StaticRouter } from "react-router";

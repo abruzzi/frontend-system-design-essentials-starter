@@ -1,12 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import {
-  attachClosestEdge,
-  extractClosestEdge,
-} from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { Card } from "./Card.tsx";
 import type { CardType } from "../../../types.ts";
+
+// Dynamic imports for browser-only drag-and-drop (not available during SSR)
+const loadDragAndDrop = async () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const [{ draggable, dropTargetForElements }, { attachClosestEdge, extractClosestEdge }] = await Promise.all([
+    import("@atlaskit/pragmatic-drag-and-drop/element/adapter"),
+    import("@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge"),
+  ]);
+  return { draggable, dropTargetForElements, attachClosestEdge, extractClosestEdge };
+};
 
 const DropIndicator = ({ edge }: { edge: "top" | "bottom" }) => {
   return (
@@ -39,65 +45,83 @@ export const DraggableCard = (props: DraggableCardProps) => {
   const [closestEdge, setClosestEdge] = useState<"top" | "bottom" | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
 
-  // Make card draggable
+  // Make card draggable (client-side only)
   useEffect(() => {
     const element = ref.current;
-    if (!element) return;
+    if (!element || typeof window === "undefined") return;
 
-    return draggable({
-      element,
-      getInitialData: () => ({ cardId: id, columnId, index, type: "card" }),
-      onDragStart: () => setIsDragging(true),
-      onDrop: () => setIsDragging(false),
+    let cleanup: (() => void) | undefined;
+
+    loadDragAndDrop().then((dnd) => {
+      if (!dnd) return;
+      cleanup = dnd.draggable({
+        element,
+        getInitialData: () => ({ cardId: id, columnId, index, type: "card" }),
+        onDragStart: () => setIsDragging(true),
+        onDrop: () => setIsDragging(false),
+      });
     });
+
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, [id, columnId, index]);
 
-  // Make card a drop target for reordering
+  // Make card a drop target for reordering (client-side only)
   useEffect(() => {
     const element = ref.current;
-    if (!element) return;
+    if (!element || typeof window === "undefined") return;
 
-    return dropTargetForElements({
-      element,
-      getData: ({ input, element }) => {
-        const data = { columnId, index, type: "card-target" };
-        return attachClosestEdge(data, {
-          input,
-          element,
-          allowedEdges: ["top", "bottom"],
-        });
-      },
-      canDrop: ({ source }: { source: any }) =>
-        source.data.type === "card" && source.data.cardId !== id,
-      onDragEnter: ({ self }: { self: any }) => {
-        const edge = extractClosestEdge(self.data);
-        setClosestEdge(edge);
-      },
-      onDrag: ({ self }: { self: any }) => {
-        const edge = extractClosestEdge(self.data);
-        setClosestEdge(edge);
-      },
-      onDragLeave: () => setClosestEdge(null),
-      onDrop: ({ source, self }: { source: any; self: any }) => {
-        setClosestEdge(null);
-        const sourceCardId = source.data.cardId as string;
-        const sourceColumnId = source.data.columnId as string;
-        const sourceIndex = source.data.index as number;
-        const edge = extractClosestEdge(self.data);
+    let cleanup: (() => void) | undefined;
 
-        // Calculate the target index based on the edge
-        const targetIndex = edge === "top" ? index : index + 1;
+    loadDragAndDrop().then((dnd) => {
+      if (!dnd) return;
+      cleanup = dnd.dropTargetForElements({
+        element,
+        getData: ({ input, element }) => {
+          const data = { columnId, index, type: "card-target" };
+          return dnd.attachClosestEdge(data, {
+            input,
+            element,
+            allowedEdges: ["top", "bottom"],
+          });
+        },
+        canDrop: ({ source }: { source: any }) =>
+          source.data.type === "card" && source.data.cardId !== id,
+        onDragEnter: ({ self }: { self: any }) => {
+          const edge = dnd.extractClosestEdge(self.data);
+          setClosestEdge(edge);
+        },
+        onDrag: ({ self }: { self: any }) => {
+          const edge = dnd.extractClosestEdge(self.data);
+          setClosestEdge(edge);
+        },
+        onDragLeave: () => setClosestEdge(null),
+        onDrop: ({ source, self }: { source: any; self: any }) => {
+          setClosestEdge(null);
+          const sourceCardId = source.data.cardId as string;
+          const sourceColumnId = source.data.columnId as string;
+          const sourceIndex = source.data.index as number;
+          const edge = dnd.extractClosestEdge(self.data);
 
-        // Call onMove callback
-        onMove(
-          sourceCardId,
-          sourceColumnId,
-          columnId,
-          sourceIndex,
-          targetIndex,
-        );
-      },
+          // Calculate the target index based on the edge
+          const targetIndex = edge === "top" ? index : index + 1;
+
+          // Call onMove callback
+          onMove(
+            sourceCardId,
+            sourceColumnId,
+            columnId,
+            sourceIndex,
+            targetIndex,
+          );
+        },
+      });
     });
+
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, [id, columnId, index, onMove]);
 
   return (

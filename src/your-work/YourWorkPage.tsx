@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { TopBar } from "../board-page/topbar/TopBar.tsx";
-import { TopBarSkeleton } from "../board-page/topbar/TopBarSkeleton.tsx";
 import { LayoutGrid, Calendar, FileText } from "lucide-react";
+import { YourWorkPageSkeleton } from "./YourWorkPageSkeleton.tsx";
 
 type BoardSummary = {
   id: string;
@@ -39,30 +38,11 @@ export const YourWorkPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
-        <TopBarSkeleton />
-        <div className="flex-1 p-8">
-          <div className="mx-auto max-w-6xl">
-            <div className="h-8 w-48 bg-neutral-200 rounded animate-pulse mb-6" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-32 bg-neutral-200 rounded-lg animate-pulse"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <YourWorkPageSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
-      <TopBar />
-      <div className="flex-1 p-8">
+    <div className="flex-1 p-8">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-neutral-900 mb-2">
@@ -112,7 +92,6 @@ export const YourWorkPage = () => {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 };

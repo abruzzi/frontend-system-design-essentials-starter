@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { TopBar } from "../board-page/topbar/TopBar.tsx";
-import { TopBarSkeleton } from "../board-page/topbar/TopBarSkeleton.tsx";
 import { useBoardContext } from "../shared/BoardContext.tsx";
 import type { User } from "../types.ts";
 import { Save, User as UserIcon, Mail } from "lucide-react";
@@ -65,22 +63,17 @@ export const SettingsPage = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
-        <TopBarSkeleton />
-        <div className="flex-1 p-8">
-          <div className="mx-auto max-w-2xl">
-            <div className="h-8 w-48 bg-neutral-200 rounded animate-pulse mb-6" />
-            <div className="h-64 bg-neutral-200 rounded-lg animate-pulse" />
-          </div>
+      <div className="flex-1 p-8">
+        <div className="mx-auto max-w-2xl">
+          <div className="h-8 w-48 bg-neutral-200 rounded animate-pulse mb-6" />
+          <div className="h-64 bg-neutral-200 rounded-lg animate-pulse" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
-      <TopBar />
-      <div className="flex-1 p-8">
+    <div className="flex-1 p-8">
         <div className="mx-auto max-w-2xl">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-neutral-900 mb-2">
@@ -175,7 +168,6 @@ export const SettingsPage = () => {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 };

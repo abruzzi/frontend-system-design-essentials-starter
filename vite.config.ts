@@ -32,6 +32,20 @@ export default defineConfig({
     },
   },
   ssr: {
-    noExternal: ["react", "react-dom", "react-router-dom", "react-router"],
+    // Externalize React and React-DOM to use node_modules versions directly
+    // This prevents multiple React instances and context issues
+    external: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "@atlaskit/pragmatic-drag-and-drop",
+      "@atlaskit/pragmatic-drag-and-drop-hitbox",
+    ],
+    noExternal: ["react-router-dom", "react-router"],
+    resolve: {
+      // Ensure consistent React resolution
+      conditions: ["node", "import"],
+      dedupe: ["react", "react-dom"],
+    },
   },
 });

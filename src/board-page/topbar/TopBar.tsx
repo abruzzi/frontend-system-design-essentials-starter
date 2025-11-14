@@ -1,7 +1,9 @@
 import { useBoardContext } from "../../shared/BoardContext.tsx";
 import { useHydrated } from "../../hooks/useHydrated.ts";
 import { TopBarSkeleton } from "./TopBarSkeleton.tsx";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useLocation } from "react-router";
+import { useEffect } from "react";
 
 import { lazy, Suspense } from "react";
 import type {User} from "../../types.ts";
@@ -28,10 +30,24 @@ function UserAvatar(props: { user: User }) {
 
 export const TopBar = () => {
   const userId = 2;
-  const { state, upsertUser } = useBoardContext();
+  const { state, upsertUser, ingestUsers } = useBoardContext();
   const user = state.usersById[userId];
   const isHydrated = useHydrated();
   const location = useLocation();
+
+  // Fetch user if not already in context (TopBar needs it)
+  useEffect(() => {
+    if (!user) {
+      fetch(`/api/users/${userId}`)
+        .then((r) => r.json())
+        .then((userData) => {
+          ingestUsers([userData]);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch user", err);
+        });
+    }
+  }, [user, userId, ingestUsers]);
 
   if (!user) return <TopBarSkeleton />;
 

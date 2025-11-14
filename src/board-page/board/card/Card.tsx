@@ -1,5 +1,5 @@
 import * as Popover from "@radix-ui/react-popover";
-import { lazy, LegacyRef, Suspense, useEffect, useRef, useState } from "react";
+import {lazy, Suspense, useEffect, useRef, useState} from "react";
 import { fetchUsers, UserSelect } from "./UserSelect.tsx";
 import type { User } from "../../../types.ts";
 import { useBoardContext } from "../../../shared/BoardContext.tsx";

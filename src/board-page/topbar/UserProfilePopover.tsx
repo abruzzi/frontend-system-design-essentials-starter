@@ -1,7 +1,8 @@
 import type { User } from "../../types.ts";
 import { useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useLocation } from "react-router";
 import { Settings } from "lucide-react";
 
 export const UserProfilePopover = ({

@@ -1,9 +1,7 @@
 import { Board } from "./board/Board.tsx";
-import { TopBar } from "./topbar/TopBar.tsx";
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useBoardContext } from "../shared/BoardContext.tsx";
-import { TopBarSkeleton } from "./topbar/TopBarSkeleton.tsx";
 import { BoardSkeleton } from "./board/BoardSkeleton.tsx";
 
 export const BoardPage = () => {
@@ -83,18 +81,8 @@ export const BoardPage = () => {
   }, [boardId, upsertUser, updateCard]);
 
   if (state.columnOrder.length === 0) {
-    return (
-      <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
-        <TopBarSkeleton />
-        <BoardSkeleton />
-      </div>
-    );
+    return <BoardSkeleton />;
   }
 
-  return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
-      <TopBar />
-      <Board id={boardId} />
-    </div>
-  );
+  return <Board id={boardId} />;
 };
