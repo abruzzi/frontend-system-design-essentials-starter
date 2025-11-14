@@ -1,9 +1,9 @@
 import * as Popover from "@radix-ui/react-popover";
-import {lazy, LegacyRef, Suspense, useEffect, useRef, useState} from "react";
+import { lazy, LegacyRef, Suspense, useEffect, useRef, useState } from "react";
 import { fetchUsers, UserSelect } from "./UserSelect.tsx";
 import type { User } from "../../../types.ts";
 import { useBoardContext } from "../../../shared/BoardContext.tsx";
-import { MoreHorizontal, Archive } from "lucide-react";
+import { MoreHorizontal, Archive, ArrowRight } from "lucide-react";
 import { useHydrated } from "../../../hooks/useHydrated.ts";
 import { usePrefetch } from "../../../shared/QueryProvider.tsx";
 import { CardEditModalSkeleton } from "./edit-modal/CardEditModalSkeleton.tsx";
@@ -12,6 +12,8 @@ type CardProps = {
   id: string;
   title: string;
   assignee?: User;
+  columnId: string;
+  index: number;
 };
 
 const CardEditModal = lazy(() =>
@@ -20,12 +22,13 @@ const CardEditModal = lazy(() =>
   })),
 );
 
-export const Card = ({ id, title, assignee }: CardProps) => {
+export const Card = ({ id, title, assignee, columnId, index }: CardProps) => {
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const { removeCard, updateCard, upsertUser } = useBoardContext();
+  const { removeCard, updateCard, upsertUser, columns, moveCard } =
+    useBoardContext();
   const isHydrated = useHydrated();
 
   const [isModalOpen, setModalOpen] = useState(false);
@@ -149,6 +152,36 @@ export const Card = ({ id, title, assignee }: CardProps) => {
     prefetch(`users::5:0`, () => fetchUsers(0, 5, ""), 60_000);
   };
 
+  function handleMoveToColumn(targetColumnId: string) {
+    if (!columnId || index === undefined || !columns) return;
+
+    const targetColumn = columns.find((col) => col.id === targetColumnId);
+    if (!targetColumn) return;
+
+    // Move to the end of the target column
+    const targetIndex = targetColumn.cardIds.length;
+
+    // Update UI optimistically
+    moveCard(id, columnId, targetColumnId, index, targetIndex);
+
+    // Sync with backend
+    fetch(`/api/cards/${id}/move`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fromColumnId: columnId,
+        toColumnId: targetColumnId,
+        fromIndex: index,
+        toIndex: targetIndex,
+      }),
+    }).catch((err) => {
+      console.error("Failed to move card:", err);
+      // Could add error handling/revert logic here
+    });
+
+    setMenuOpen(false);
+  }
+
   return (
     <article
       ref={cardRef}
@@ -181,6 +214,29 @@ export const Card = ({ id, title, assignee }: CardProps) => {
                 collisionPadding={8}
                 className="z-50 w-40 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl outline-none"
               >
+                {columns && columnId && index !== undefined && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                      Move to column
+                    </div>
+                    {columns.map((column) => {
+                      const isCurrentColumn = column.id === columnId;
+                      return (
+                        <button
+                          key={column.id}
+                          type="button"
+                          onClick={() => handleMoveToColumn(column.id)}
+                          disabled={isCurrentColumn}
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-neutral-700 hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ArrowRight className="h-4 w-4" aria-hidden />
+                          {column.title}
+                        </button>
+                      );
+                    })}
+                    <div className="my-1 h-px bg-neutral-200" />
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={async () => {

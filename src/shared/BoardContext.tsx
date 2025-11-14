@@ -1,6 +1,17 @@
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useState } from "react";
-import type { BoardPayload, NormalizedBoard, User } from "../types.ts";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
+import type {
+  BoardPayload,
+  NormalizedBoard,
+  NormalizedColumn,
+  User,
+} from "../types.ts";
 import { normalizeBoard } from "../utils";
 
 type BoardContextType = {
@@ -27,6 +38,7 @@ type BoardContextType = {
     fromIndex: number,
     toIndex: number,
   ) => void;
+  columns: NormalizedColumn[];
 };
 
 export const EMPTY_BOARD_STATE: NormalizedBoard = {
@@ -48,6 +60,7 @@ const BoardContext = createContext<BoardContextType>({
   clearAssigneeFilters: () => {},
   addCard: () => {},
   moveCard: () => {},
+  columns: [],
 });
 
 export const BoardProvider = ({
@@ -58,6 +71,11 @@ export const BoardProvider = ({
   children: ReactNode;
 }) => {
   const [state, setState] = useState<NormalizedBoard>(initialState);
+
+  const columns = useMemo(
+    () => state.columnOrder.map((colId) => state.columnsById[colId]),
+    [state.columnOrder, state.columnsById],
+  );
 
   const ingestBoard = useCallback((data: BoardPayload) => {
     const normalized = normalizeBoard(data);
@@ -262,6 +280,7 @@ export const BoardProvider = ({
         clearAssigneeFilters,
         addCard,
         moveCard,
+        columns,
       }}
     >
       {children}
