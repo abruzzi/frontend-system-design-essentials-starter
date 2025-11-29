@@ -27,12 +27,6 @@ export const BoardControl = ({
   search,
   onSearchChange,
 }: BoardControlProps) => {
-  const refreshBoard = async () => {
-    const res = await fetch('/api/board/1');
-    const data = await res.json();
-    console.log('Fetched board:', data);
-  };
-
   return (
     <div className="w-full bg-neutral-100 border-neutral-200">
       <div className="mx-auto max-w-6xl px-4 py-3">
@@ -51,7 +45,6 @@ export const BoardControl = ({
 
           <ViewToggle view={view} onToggle={onToggleView} />
           <AssigneeList />
-          <button onClick={refreshBoard}>Refresh</button>
         </div>
       </div>
     </div>

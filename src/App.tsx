@@ -9,8 +9,6 @@ import { QueryProvider } from "./shared/QueryProvider.tsx";
 import { AppLayout } from "./shared/AppLayout.tsx";
 import { PageLoadingFallback } from "./shared/PageLoadingFallback.tsx";
 
-// Lazy load page components for code splitting
-// Note: These components should NOT include TopBar - it's in AppLayout
 const YourWorkPage = lazy(() =>
   import("./your-work/YourWorkPage.tsx").then((mod) => ({
     default: mod.YourWorkPage,
