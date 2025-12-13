@@ -1,0 +1,21 @@
+{
+  "budgets": {
+    "initial": {
+      "max": "200kb",
+      "description": "Initial JS bundle (gzipped)"
+    },
+    "vendor": {
+      "max": "150kb",
+      "description": "Vendor dependencies (gzipped)"
+    },
+    "total": {
+      "max": "500kb",
+      "description": "Total transfer size (gzipped)"
+    }
+  },
+  "targets": {
+    "LCP": "2.5s",
+    "INP": "200ms",
+    "CLS": "0.1"
+  }
+}

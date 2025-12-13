@@ -8,6 +8,7 @@ import {
 import { QueryProvider } from "./shared/QueryProvider.tsx";
 import { AppLayout } from "./shared/AppLayout.tsx";
 import { PageLoadingFallback } from "./shared/PageLoadingFallback.tsx";
+import { logWebVitals, reportWebVitals } from "./utils/performance.ts";
 
 const YourWorkPage = lazy(() =>
   import("./your-work/YourWorkPage.tsx").then((mod) => ({
@@ -26,6 +27,15 @@ const SettingsPage = lazy(() =>
     default: mod.SettingsPage,
   })),
 );
+
+logWebVitals();
+
+if (import.meta.env.PROD) {
+  reportWebVitals((metric) => {
+    console.log(metric);
+    // Send to your analytics service
+  });
+}
 
 const App = () => (
   <QueryProvider>
