@@ -1,9 +1,12 @@
 import express from "express";
 import cors from "cors";
+import { WebSocketServer, WebSocket } from "ws";
+
 import users from "./mocks/users.json";
 import board from "./mocks/board.json";
+import { MockEventEmitter } from "./MockEventEmitter";
 
-import { MockEventEmitter } from "./MockEventEmitter.ts";
+// ---------------- Types ----------------
 
 type User = {
   id: number;
@@ -17,11 +20,9 @@ type Card = { id: string; title: string; assignee?: UserLite };
 type Column = { id: string; title: string; cards: Card[] };
 type BoardPayload = { columns: Column[] };
 
-function variableDelay(q: string): number {
-  const base = q.startsWith("inst") ? 150 : q.startsWith("ins") ? 650 : 300;
-  const jitter = Math.floor(Math.random() * 120); // 0-119ms
-  return base + jitter;
-}
+// ---------------- Helpers ----------------
+
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function findCardById(boardData: BoardPayload, id: string) {
   for (const col of boardData.columns) {
@@ -31,267 +32,199 @@ function findCardById(boardData: BoardPayload, id: string) {
   return null;
 }
 
-function filterBoard(
-  data: BoardPayload,
-  q: string,
-  assigneeIds: number[] = [],
-): BoardPayload {
-  const filteredColumns: Column[] = data.columns.map((col) => ({
-    ...col,
-    cards: col.cards.filter((c) => {
-      // Text search filter
-      let matchesTextSearch = true;
-      if (q) {
-        const needle = q.trim().toLowerCase();
-        const inTitle = c.title.toLowerCase().includes(needle);
-        const inId = c.id.toLowerCase().includes(needle);
-        const inAssignee =
-          c.assignee?.name?.toLowerCase().includes(needle) ?? false;
-        matchesTextSearch = inTitle || inId || inAssignee;
-      }
-
-      // Assignee filter
-      let matchesAssigneeFilter = true;
-      if (assigneeIds.length > 0) {
-        matchesAssigneeFilter = c.assignee
-          ? assigneeIds.includes(c.assignee.id)
-          : false;
-      }
-
-      return matchesTextSearch && matchesAssigneeFilter;
-    }),
-  }));
-
-  return { columns: filteredColumns };
-}
-
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// ---------------- Realtime State ----------------
 
 const mockEventEmitter = new MockEventEmitter();
+
+// WebSocket connections per board
+const wsConnections = new Map<string, Set<WebSocket>>();
+
+// SSE connections per board
+const sseConnections = new Map<string, Set<express.Response>>();
+
+// ---------------- Express Setup ----------------
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// PATCH /api/users/:id
-app.patch("/api/users/:id", async (req, res) => {
-  const id = String(req.params.id);
-  const payload = req.body as Partial<User>;
+// ---------------- REST APIs ----------------
 
-  const index = (users as User[]).findIndex((u) => String(u.id) === id);
-  if (index === -1) {
-    return res.status(404).json({ error: `User ${id} not found` });
-  }
-
-  (users as User[])[index] = { ...(users as User[])[index], ...payload };
-  return res.json((users as User[])[index]);
+// GET /api/users
+app.get("/api/users", (req, res) => {
+  res.json(users);
 });
 
 // GET /api/users/:id
 app.get("/api/users/:id", (req, res) => {
-  const id = String(req.params.id);
-  const user = (users as User[]).find((u) => String(u.id) === id);
-  if (!user) {
-    return res.status(404).json({ error: `User ${id} not found` });
-  }
-  return res.json(user);
+  const user = users.find((u) => String(u.id) === req.params.id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json(user);
 });
 
-// GET /api/users
-app.get("/api/users", async (req, res) => {
-  const url = new URL(req.protocol + "://" + req.get("host") + req.originalUrl);
-  const q = (url.searchParams.get("query") || "").trim().toLowerCase();
-  const page = Number(url.searchParams.get("page") ?? "0");
-  const pageSize = Number(url.searchParams.get("pageSize") ?? "5");
+// PATCH /api/users/:id
+app.patch("/api/users/:id", (req, res) => {
+  const index = users.findIndex((u) => String(u.id) === req.params.id);
+  if (index === -1) return res.status(404).json({ error: "User not found" });
 
-  const source: User[] = q
-    ? (users as User[]).filter((u) => u.name.toLowerCase().includes(q))
-: (users as User[]);
-
-  const total = source.length;
-  const start = page * pageSize;
-  const end = start + pageSize;
-  const items = source.slice(start, end);
-
-  return res.json({
-    items,
-    pageInfo: {
-      total,
-      page,
-      pageSize,
-      hasMore: end < total,
-    },
-  });
+  users[index] = { ...users[index], ...req.body };
+  res.json(users[index]);
 });
 
 // GET /api/board/:id
-app.get("/api/board/:id", async (req, res) => {
-  const url = new URL(req.protocol + "://" + req.get("host") + req.originalUrl);
-  const q = url.searchParams.get("q") ?? "";
-
-  // Parse assigneeIds parameter - can be comma-separated list of user IDs
-  const assigneeIdsParam = url.searchParams.get("assigneeIds");
-  const assigneeIds: number[] = assigneeIdsParam
-    ? assigneeIdsParam
-      .split(",")
-      .map((id) => parseInt(id.trim(), 10))
-      .filter((id) => !isNaN(id))
-    : [];
-
-  const filtered = filterBoard(board as BoardPayload, q, assigneeIds);
-  const ms = variableDelay(q);
-  await delay(ms);
-
-  return res.json(filtered);
+app.get("/api/board/:id", async (_req, res) => {
+  await delay(300);
+  res.json(board);
 });
 
 // GET /api/cards/:id
 app.get("/api/cards/:id", (req, res) => {
-  const id = String(req.params.id);
-  const match = findCardById(board as BoardPayload, id);
-  if (!match) {
-    return res.status(404).json({ error: `Card ${id} not found` });
-  }
-  return res.json({ ticket: match.card, column: match.column });
-});
-
-// DELETE /api/cards/:id
-app.delete("/api/cards/:id", (req, res) => {
-  const id = String(req.params.id);
-  const data = board as BoardPayload;
-  let removed = false;
-
-  for (const col of data.columns) {
-    const idx = col.cards.findIndex(
-      (c) => c.id.toLowerCase() === id.toLowerCase(),
-    );
-    if (idx !== -1) {
-      col.cards.splice(idx, 1);
-      removed = true;
-      break;
-    }
-  }
-
-  if (!removed) {
-    return res.status(404).json({ error: `Card ${id} not found` });
-  }
-
-  return res.status(204).end();
+  const match = findCardById(board as BoardPayload, req.params.id);
+  if (!match) return res.status(404).json({ error: "Card not found" });
+  res.json(match);
 });
 
 // POST /api/cards
 app.post("/api/cards", async (req, res) => {
-  const payload = req.body as { title: string; columnId: string };
-
-  if (!payload.title || !payload.columnId) {
-    return res.status(400).json({ error: "Title and columnId are required" });
+  const { title, columnId } = req.body;
+  if (!title || !columnId) {
+    return res.status(400).json({ error: "title and columnId required" });
   }
 
-  // Find the column to add the card to
   const boardData = board as BoardPayload;
-  const column = boardData.columns.find((col) => col.id === payload.columnId);
-
+  const column = boardData.columns.find((c) => c.id === columnId);
   if (!column) {
-    return res
-      .status(404)
-      .json({ error: `Column ${payload.columnId} not found` });
+    return res.status(404).json({ error: "Column not found" });
   }
 
-  const totalCards = boardData.columns.reduce(
+  const total = boardData.columns.reduce(
     (sum, col) => sum + col.cards.length,
     0,
   );
-  const newCardId = `TICKET-${totalCards + 1}`;
 
-  // Create the new card
   const newCard: Card = {
-    id: newCardId,
-    title: payload.title.trim(),
+    id: `TICKET-${total + 1}`,
+    title: title.trim(),
   };
 
-  // Add the card to the column
   column.cards.push(newCard);
 
-  // Add delay for realism
+  // Emit ONCE
+  mockEventEmitter.emit("card-created", {
+    boardId: "1",
+    card: newCard,
+    columnId,
+  });
+
   await delay(200);
-
-  return res.status(201).json(newCard);
+  res.status(201).json(newCard);
 });
 
-// PATCH /api/cards/:id
-app.patch("/api/cards/:id", async (req, res) => {
-  const id = String(req.params.id);
-  const payload = req.body as Partial<Card>;
-  const data = board as BoardPayload;
+// ---------------- SSE ----------------
 
-  // Add delay for realism
-  await delay(1000);
-
-  if (id === "TICKET-1") {
-    return res.status(500).json({ error: "Internal server error" });
-  }
-
-  for (const col of data.columns) {
-    const cardIndex = col.cards.findIndex(
-      (c) => c.id.toLowerCase() === id.toLowerCase(),
-    );
-
-    if (cardIndex !== -1) {
-      // Update the card with new data
-      col.cards[cardIndex] = { ...col.cards[cardIndex], ...payload };
-
-      // broadcast the change (unchanged event name)
-      mockEventEmitter.emit("card-assigned", col.cards[cardIndex]);
-
-      return res.json(col.cards[cardIndex]);
-    }
-  }
-
-  return res.status(404).json({ error: `Card ${id} not found` });
-});
-
-// GET /api/board/:id/events  (SSE)
-app.get("/api/board/:id/events", async (req, res) => {
+app.get("/api/board/:id/events", (req, res) => {
   const boardId = req.params.id;
 
-  // SSE headers
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Cache-Control",
   });
 
-  // helper to send one event
-  const sendEvent = (eventType: string, data: any) => {
-    res.write(`event: ${eventType}\n`);
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-  };
+  if (!sseConnections.has(boardId)) {
+    sseConnections.set(boardId, new Set());
+  }
 
-  // initial connection event
-  sendEvent("connected", { boardId });
+  sseConnections.get(boardId)!.add(res);
 
-  // listeners (same event name as your emitter usage)
-  const handleCardAssigned = (data: any) => {
-    sendEvent("card-assigned", data);
-  };
+  res.write(`event: connected\ndata: ${JSON.stringify({ boardId })}\n\n`);
 
-  mockEventEmitter.on("card-assigned", handleCardAssigned);
+  const heartbeat = setInterval(() => {
+    res.write(`: keep-alive\n\n`);
+  }, 15_000);
 
-  // heartbeats (keeps proxies happy)
-  const heartbeat = setInterval(() => res.write(`: keep-alive\n\n`), 15_000);
-
-  // cleanup on disconnect
   req.on("close", () => {
     clearInterval(heartbeat);
-    mockEventEmitter.off("card-assigned", handleCardAssigned);
+    sseConnections.get(boardId)?.delete(res);
+    if (sseConnections.get(boardId)?.size === 0) {
+      sseConnections.delete(boardId);
+    }
     res.end();
   });
 });
 
-/** ---------------- Start server ---------------- */
+// ---------------- Server & WebSocket ----------------
+
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Mock API listening on http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`API running at http://localhost:${PORT}`);
 });
+
+const wss = new WebSocketServer({ server });
+
+wss.on("connection", (ws, req) => {
+  const url = new URL(req.url || "", `http://${req.headers.host}`);
+  const boardId = url.pathname.split("/").pop();
+
+  if (!boardId) {
+    ws.close(1008, "Board ID required");
+    return;
+  }
+
+  if (!wsConnections.has(boardId)) {
+    wsConnections.set(boardId, new Set());
+  }
+
+  wsConnections.get(boardId)!.add(ws);
+
+  console.log(`WS connected: board ${boardId}`);
+
+  ws.send(JSON.stringify({ type: "connected", boardId }));
+
+  ws.on("close", () => {
+    wsConnections.get(boardId)?.delete(ws);
+    if (wsConnections.get(boardId)?.size === 0) {
+      wsConnections.delete(boardId);
+    }
+    console.log(`WS disconnected: board ${boardId}`);
+  });
+});
+
+// ---------------- GLOBAL REALTIME FAN-OUT ----------------
+
+mockEventEmitter.on(
+  "card-created",
+  (data: { boardId: string; card: Card; columnId: string }) => {
+    const message = JSON.stringify({
+      type: "card-created",
+      data: {
+        card: data.card,
+        columnId: data.columnId,
+      },
+    });
+
+    // WebSocket broadcast
+    const wsSet = wsConnections.get(data.boardId);
+    if (wsSet) {
+      for (const ws of wsSet) {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(message);
+        }
+      }
+    }
+
+    // SSE broadcast
+    const sseSet = sseConnections.get(data.boardId);
+    if (sseSet) {
+      for (const res of sseSet) {
+        res.write(
+          `event: card-created\ndata: ${JSON.stringify({
+            card: data.card,
+            columnId: data.columnId,
+          })}\n\n`,
+        );
+      }
+    }
+  },
+);

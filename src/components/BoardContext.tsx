@@ -2,7 +2,6 @@ import { createContext, useCallback, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import type {
   BoardPayload,
-  CardType,
   NormalizedBoard,
   User,
 } from "../types.ts";
@@ -134,6 +133,10 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
   const addCard = useCallback(
     (columnId: string, card: { id: string; title: string }) => {
       setState((prevState: NormalizedBoard) => {
+        if (prevState.cardsById[card.id]) {
+          return prevState;
+        }
+
         const updatedCardsById = {
           ...prevState.cardsById,
           [card.id]: {

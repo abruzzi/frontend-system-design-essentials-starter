@@ -2,9 +2,10 @@ import { Board } from "./Board.tsx";
 import { TopBar } from "./TopBar.tsx";
 import { useEffect } from "react";
 import { useBoardContext } from "./BoardContext.tsx";
+import { useBoardWebSocket } from "../hooks/useBoardWebSocket.ts";
 
 export const KanbanMockup = ({ id }: { id: string }) => {
-  const { ingestBoard, ingestUsers, upsertUser, updateCard } =
+  const { ingestBoard, ingestUsers, upsertUser, updateCard, addCard } =
     useBoardContext();
 
   useEffect(() => {
@@ -49,6 +50,15 @@ export const KanbanMockup = ({ id }: { id: string }) => {
       es.close();
     }
   }, [id]);
+
+  // WebSocket connection for card-created events
+  useBoardWebSocket(id, ({ card, columnId }) => {
+    console.log("Received card-created via WebSocket:", card, columnId);
+    addCard(columnId, {
+      id: card.id,
+      title: card.title,
+    });
+  });
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
