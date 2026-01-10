@@ -42,9 +42,9 @@ export default defineConfig({
   build: {
     outDir: "dist",
     manifest: true,
-    rollupOptions: {
-      input: "/src/entry-client.tsx",
-    },
+    // rollupOptions: {
+    //   input: "/src/entry-client.tsx",
+    // },
   },
   ssr: {
     // Externalize React and React-DOM to use node_modules versions directly
