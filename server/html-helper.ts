@@ -28,7 +28,14 @@ export function serialize(data: unknown) {
     .replace(/\u2029/g, "\\u2029");
 }
 
-let manifest = null;
+type ManifestEntry = {
+  file?: string;
+  css?: string[];
+};
+
+type Manifest = Record<string, ManifestEntry>;
+
+let manifest: Manifest | null = null;
 
 const mf = path.join(__dirname, "../dist/.vite/manifest.json");
 if (fs.existsSync(mf)) {
@@ -36,7 +43,19 @@ if (fs.existsSync(mf)) {
 }
 
 export function getClientAssets() {
-  const entry = manifest["src/entry-client.tsx"];
+  if (!manifest) {
+    return { head: "", bodyScript: "" };
+  }
+
+  // Vite manifests can use either "src/entry-client.tsx" or "index.html" as the app entry.
+  const entry =
+    manifest["src/entry-client.tsx"] ??
+    manifest["index.html"] ??
+    null;
+
+  if (!entry?.file) {
+    return { head: "", bodyScript: "" };
+  }
 
   const js = `/${entry.file}`;
   const cssLinks = (entry?.css ?? [])

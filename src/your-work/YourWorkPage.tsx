@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { LayoutGrid, Calendar, FileText } from "lucide-react";
+import { LayoutGrid, Calendar, FileText, Activity as ActivityIcon } from "lucide-react";
 import { YourWorkPageSkeleton } from "./YourWorkPageSkeleton.tsx";
+import { useActivities } from "./useActivities.ts";
 
 type BoardSummary = {
   id: string;
@@ -14,6 +15,8 @@ type BoardSummary = {
 export const YourWorkPage = () => {
   const [boards, setBoards] = useState<BoardSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const { activities, loading: activitiesLoading, error: activitiesError } =
+    useActivities();
 
   useEffect(() => {
     fetch("/api/boards")
@@ -34,6 +37,18 @@ export const YourWorkPage = () => {
       month: "short",
       day: "numeric",
       year: "numeric",
+    });
+  };
+
+  const formatActivityTimestamp = (timestamp: number | string) => {
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
     });
   };
 
@@ -91,6 +106,48 @@ export const YourWorkPage = () => {
               <p className="text-neutral-600">No boards found</p>
             </div>
           )}
+
+          <section className="mt-10">
+            <div className="flex items-center gap-2 mb-4">
+              <ActivityIcon className="h-5 w-5 text-indigo-600" />
+              <h2 className="text-lg font-semibold text-neutral-900">
+                Recent activity
+              </h2>
+            </div>
+
+            <div className="bg-white rounded-lg border border-neutral-200">
+              {activitiesLoading && (
+                <div className="p-6 text-sm text-neutral-600">Loading activity...</div>
+              )}
+
+              {!activitiesLoading && activitiesError && (
+                <div className="p-6 text-sm text-neutral-600">
+                  Something went wrong loading activity
+                </div>
+              )}
+
+              {!activitiesLoading && !activitiesError && activities.length === 0 && (
+                <div className="p-6 text-sm text-neutral-600">
+                  No recent activity
+                </div>
+              )}
+
+              {!activitiesLoading && !activitiesError && activities.length > 0 && (
+                <ul className="divide-y divide-neutral-200">
+                  {activities.map((a, idx) => (
+                    <li key={`${a.name}-${idx}`} className="p-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <p className="text-sm text-neutral-900">{a.name}</p>
+                        <p className="text-xs text-neutral-500 whitespace-nowrap">
+                          {formatActivityTimestamp(a.timestamp)}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
         </div>
     </div>
   );

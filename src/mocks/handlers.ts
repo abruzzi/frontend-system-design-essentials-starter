@@ -13,6 +13,7 @@ type UserLite = { id: number; name: string; avatar_url: string };
 type Card = { id: string; title: string; assignee?: UserLite };
 type Column = { id: string; title: string; cards: Card[] };
 type BoardPayload = { columns: Column[] };
+type Activity = { name: string; timestamp: number | string };
 
 function variableDelay(q: string): number {
   const base = q.startsWith("inst") ? 150 : q.startsWith("ins") ? 650 : 300;
@@ -151,6 +152,16 @@ export const handlers = [
         lastUpdated: "2024-01-13T14:45:00Z",
       },
     ]);
+  }),
+
+  http.get("/api/activities", async () => {
+    await delay(200);
+    const now = Date.now();
+    const activities: Activity[] = [
+      { name: "Moved card TICKET-3 to Done", timestamp: now - 1000 * 60 * 12 },
+      { name: "Finished task 'Update docs'", timestamp: now - 1000 * 60 * 60 * 3 },
+    ];
+    return HttpResponse.json(activities);
   }),
 
   http.get("/api/board/:id", async ({ request }) => {

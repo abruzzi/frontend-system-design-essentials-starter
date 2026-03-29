@@ -134,6 +134,16 @@ app.get("/api/boards", async (req, res) => {
   return res.json(boards);
 });
 
+// GET /api/activities - List recent activities of current user
+app.get("/api/activities", async (_req, res) => {
+  await delay(200);
+  const now = Date.now();
+  return res.json([
+    { name: "Moved card TICKET-3 to Done", timestamp: now - 1000 * 60 * 12 },
+    { name: "Finished task 'Update docs'", timestamp: now - 1000 * 60 * 60 * 3 },
+  ]);
+});
+
 
 // PATCH /api/users/:id
 app.patch("/api/users/:id", async (req, res) => {
