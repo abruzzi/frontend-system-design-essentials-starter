@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "echo 'No tests found.'"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.15",
