@@ -1,8 +1,10 @@
 {
+  "type": "module",
   "scripts": {
     "server": "tsx watch index.ts",
     "start": "node dist/index.js",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json && npm run copy:mocks",
+    "copy:mocks": "cp -r mocks dist/mocks"
   },
   "dependencies": {
     "cors": "^2.8.5",

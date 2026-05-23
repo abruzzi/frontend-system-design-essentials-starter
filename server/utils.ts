@@ -1,4 +1,4 @@
-import { BoardPayload, Column } from "./types.ts";
+import { BoardPayload, Column } from "./types.js";
 
 export function variableDelay(q: string): number {
   const base = q.startsWith("inst") ? 150 : q.startsWith("ins") ? 650 : 300;

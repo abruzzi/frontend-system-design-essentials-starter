@@ -3,15 +3,21 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20.19.4"
+  },
   "scripts": {
     "dev": "vite",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:ui": "npx playwright test --ui",
     "test:smoke": "npx playwright test smoke.spec.ts",
-    "build": "npm run build:client && npm run build:server",
+    "build": "npm run build:client && npm run build:server && npm run build:server:compile",
     "build:client": "vite build",
     "build:server": "vite build --ssr src/entry-server.tsx --outDir dist/server",
+    "build:server:compile": "npm --prefix server run build",
+    "start": "node server/dist/index.js",
+    "start:prod": "NODE_ENV=production node server/dist/index.js",
     "check-bundle": "node scripts/check-bundle-size.js",
     "lint": "eslint .",
     "preview": "vite preview"

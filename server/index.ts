@@ -1,31 +1,37 @@
 import path from "node:path";
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
+import { Writable } from "stream";
+import { createHash } from "node:crypto";
 
 import express from "express";
 import cors from "cors";
-import users from "./mocks/users.json";
-import board from "./mocks/board.json";
-import boards from "./mocks/boards.json";
+import users from "./mocks/users.json" with { type: "json" };
+import board from "./mocks/board.json" with { type: "json" };
+import boards from "./mocks/boards.json" with { type: "json" };
 
-import { createHash } from "node:crypto";
-
-import { MockEventEmitter } from "./mock-event-emitter.ts";
-import { BoardPayload, Card, User } from "./types.ts";
-import { filterBoard, findCardById, variableDelay } from "./utils.ts";
-import { renderApp } from "../dist/server/entry-server.js";
+import { MockEventEmitter } from "./mock-event-emitter.js";
+import { BoardPayload, Card, User } from "./types.js";
+import { filterBoard, findCardById, variableDelay } from "./utils.js";
 import {
   endHTML,
   getClientAssets,
   serialize,
   startHTML,
-} from "./html-helper.ts";
-import { Writable } from "stream";
+} from "./html-helper.js";
+import {
+  CLIENT_ASSETS_DIR,
+  MOCKS_DIR,
+  SSR_ENTRY_PATH,
+} from "./paths.js";
+
+const { renderApp } = await import(pathToFileURL(SSR_ENTRY_PATH).href);
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function resetMockData() {
-  const boardPath = path.join(__dirname, "./mocks/board.json");
-  const usersPath = path.join(__dirname, "./mocks/users.json");
+  const boardPath = path.join(MOCKS_DIR, "board.json");
+  const usersPath = path.join(MOCKS_DIR, "users.json");
 
   const freshBoard = JSON.parse(
     readFileSync(boardPath, "utf-8"),
@@ -53,7 +59,7 @@ app.set("etag", false);
 
 app.use(
   "/assets",
-  express.static(path.join(__dirname, "../dist/assets"), {
+  express.static(CLIENT_ASSETS_DIR, {
     maxAge: "1d",
     immutable: true,
   }),
@@ -77,17 +83,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// Test reset endpoint - reloads mock data from JSON files
-// Only intended for use in automated tests
-app.post("/api/test/reset", (_req, res) => {
-  try {
-    resetMockData();
-    res.status(200).json({ message: "Mock data reset successfully" });
-  } catch (error) {
-    console.error("Failed to reset mock data:", error);
-    res.status(500).json({ error: "Failed to reset mock data" });
-  }
+app.get("/health", (_req, res) => {
+  res.status(200).json({ ok: true });
 });
+
+// Test reset endpoint - reloads mock data from JSON files (non-production only)
+if (process.env.NODE_ENV !== "production") {
+  app.post("/api/test/reset", (_req, res) => {
+    try {
+      resetMockData();
+      res.status(200).json({ message: "Mock data reset successfully" });
+    } catch (error) {
+      console.error("Failed to reset mock data:", error);
+      res.status(500).json({ error: "Failed to reset mock data" });
+    }
+  });
+}
 
 // SSR route handler for all pages
 app.get(["/", "/your-work", "/board/:id", "/settings"], async (req, res) => {
@@ -425,5 +436,7 @@ app.get("/api/board/:id/events", async (req, res) => {
 /** ---------------- Start server ---------------- */
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`Mock API listening on http://localhost:${PORT}`);
+  console.log(
+    `Server listening on port ${PORT} (NODE_ENV=${process.env.NODE_ENV ?? "development"})`,
+  );
 });

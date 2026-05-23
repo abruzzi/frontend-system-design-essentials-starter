@@ -25,3 +25,6 @@ dist-ssr
 coverage/
 playwright-report/
 test-results/
+
+# Instructor-only notes (deployment walkthroughs, not for students)
+instructor-notes/

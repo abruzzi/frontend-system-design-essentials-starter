@@ -1,5 +1,5 @@
-import path from "node:path";
 import fs from "node:fs";
+import { CLIENT_MANIFEST_PATH } from "./paths.js";
 
 export function startHTML(head = "") {
   return `<!doctype html>
@@ -35,17 +35,14 @@ type ManifestEntry = {
 
 type Manifest = Record<string, ManifestEntry>;
 
-let manifest: Manifest | null = null;
-
-const mf = path.join(__dirname, "../dist/.vite/manifest.json");
-if (fs.existsSync(mf)) {
-  manifest = JSON.parse(fs.readFileSync(mf, "utf-8"));
-}
-
 export function getClientAssets() {
-  if (!manifest) {
+  if (!fs.existsSync(CLIENT_MANIFEST_PATH)) {
     return { head: "", bodyScript: "" };
   }
+
+  const manifest = JSON.parse(
+    fs.readFileSync(CLIENT_MANIFEST_PATH, "utf-8"),
+  ) as Manifest;
 
   // Vite manifests can use either "src/entry-client.tsx" or "index.html" as the app entry.
   const entry =
