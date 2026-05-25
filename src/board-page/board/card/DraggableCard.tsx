@@ -50,20 +50,26 @@ export const DraggableCard = (props: DraggableCardProps) => {
     const element = ref.current;
     if (!element || typeof window === "undefined") return;
 
+    let cancelled = false;
     let cleanup: (() => void) | undefined;
 
     loadDragAndDrop().then((dnd) => {
-      if (!dnd) return;
+      if (cancelled || !dnd) return;
       cleanup = dnd.draggable({
         element,
         getInitialData: () => ({ cardId: id, columnId, index, type: "card" }),
-        onDragStart: () => setIsDragging(true),
-        onDrop: () => setIsDragging(false),
+        onDragStart: () => {
+          if (!cancelled) setIsDragging(true);
+        },
+        onDrop: () => {
+          if (!cancelled) setIsDragging(false);
+        },
       });
     });
 
     return () => {
-      if (cleanup) cleanup();
+      cancelled = true;
+      cleanup?.();
     };
   }, [id, columnId, index]);
 
@@ -72,42 +78,43 @@ export const DraggableCard = (props: DraggableCardProps) => {
     const element = ref.current;
     if (!element || typeof window === "undefined") return;
 
+    let cancelled = false;
     let cleanup: (() => void) | undefined;
 
     loadDragAndDrop().then((dnd) => {
-      if (!dnd) return;
+      if (cancelled || !dnd) return;
       cleanup = dnd.dropTargetForElements({
         element,
-        getData: ({ input, element }) => {
+        getData: ({ input, element: el }) => {
           const data = { columnId, index, type: "card-target" };
           return dnd.attachClosestEdge(data, {
             input,
-            element,
+            element: el,
             allowedEdges: ["top", "bottom"],
           });
         },
-        canDrop: ({ source }: { source: any }) =>
+        canDrop: ({ source }) =>
           source.data.type === "card" && source.data.cardId !== id,
-        onDragEnter: ({ self }: { self: any }) => {
-          const edge = dnd.extractClosestEdge(self.data);
-          setClosestEdge(edge);
+        onDragEnter: ({ self }) => {
+          if (cancelled) return;
+          setClosestEdge(dnd.extractClosestEdge(self.data));
         },
-        onDrag: ({ self }: { self: any }) => {
-          const edge = dnd.extractClosestEdge(self.data);
-          setClosestEdge(edge);
+        onDrag: ({ self }) => {
+          if (cancelled) return;
+          setClosestEdge(dnd.extractClosestEdge(self.data));
         },
-        onDragLeave: () => setClosestEdge(null),
-        onDrop: ({ source, self }: { source: any; self: any }) => {
+        onDragLeave: () => {
+          if (!cancelled) setClosestEdge(null);
+        },
+        onDrop: ({ source, self }) => {
+          if (cancelled) return;
           setClosestEdge(null);
           const sourceCardId = source.data.cardId as string;
           const sourceColumnId = source.data.columnId as string;
           const sourceIndex = source.data.index as number;
           const edge = dnd.extractClosestEdge(self.data);
-
-          // Calculate the target index based on the edge
           const targetIndex = edge === "top" ? index : index + 1;
 
-          // Call onMove callback
           onMove(
             sourceCardId,
             sourceColumnId,
@@ -120,7 +127,8 @@ export const DraggableCard = (props: DraggableCardProps) => {
     });
 
     return () => {
-      if (cleanup) cleanup();
+      cancelled = true;
+      cleanup?.();
     };
   }, [id, columnId, index, onMove]);
 

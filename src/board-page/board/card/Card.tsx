@@ -255,7 +255,7 @@ export const Card = ({ id, title, assignee, columnId, index }: CardProps) => {
         ) : (
           <button
             type="button"
-            aria-label="Open context menu"
+            aria-label="Open card menu"
             title="More actions"
             disabled={isDeleting}
             className="inline-flex h-7 w-7 items-center justify-center"

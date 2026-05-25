@@ -8,10 +8,12 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:api": "npm run install:server && npm --prefix server run server",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:ui": "npx playwright test --ui",
     "test:smoke": "npx playwright test smoke.spec.ts",
+    "test:smoke:prod": "PLAYWRIGHT_BASE_URL=https://frontend-system-design-essentials-starter.onrender.com npx playwright test smoke.spec.ts",
     "build": "npm run build:client && npm run build:server && npm run build:server:compile",
     "build:client": "vite build",
     "build:server": "vite build --ssr src/entry-server.tsx --outDir dist/server",

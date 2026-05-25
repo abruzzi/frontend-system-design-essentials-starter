@@ -51,9 +51,15 @@ function resetMockData() {
 
 const mockEventEmitter = new MockEventEmitter();
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+if (!isProduction) {
+  app.use(cors());
+}
+
+app.use(express.json({ limit: "100kb" }));
 
 app.set("etag", false);
 
@@ -71,7 +77,7 @@ export const securityHeaders = {
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'", // Needed for CSS-in-JS
     "img-src 'self' data: https:",
-    "connect-src 'self' https://api.example.com",
+    "connect-src 'self'",
   ].join("; "),
 };
 
@@ -159,7 +165,12 @@ app.get("/api/activities", async (_req, res) => {
 // PATCH /api/users/:id
 app.patch("/api/users/:id", async (req, res) => {
   const id = String(req.params.id);
-  const payload = req.body as Partial<User>;
+  const body = req.body as Partial<User>;
+  const payload: Partial<User> = {
+    ...(body.name !== undefined && { name: body.name }),
+    ...(body.description !== undefined && { description: body.description }),
+    ...(body.avatar_url !== undefined && { avatar_url: body.avatar_url }),
+  };
 
   const index = (users as User[]).findIndex((u) => String(u.id) === id);
   if (index === -1) {
@@ -396,8 +407,6 @@ app.get("/api/board/:id/events", async (req, res) => {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Cache-Control",
   });
 
   // helper to send one event

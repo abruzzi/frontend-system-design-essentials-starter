@@ -4,6 +4,14 @@ import { useParams } from "react-router";
 import { useBoardContext } from "../shared/BoardContext.tsx";
 import { BoardSkeleton } from "./board/BoardSkeleton.tsx";
 
+async function fetchJson<T>(url: string, signal: AbortSignal): Promise<T> {
+  const res = await fetch(url, { signal });
+  if (!res.ok) {
+    throw new Error(`Request failed: ${res.status} ${url}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 export const BoardPage = () => {
   const { id } = useParams<{ id: string }>();
   const boardId = id || "1";
@@ -11,25 +19,24 @@ export const BoardPage = () => {
     useBoardContext();
 
   useEffect(() => {
-    const hasBoard = state.columnOrder.length > 0;
-    const hasUser = state.usersById[2];
+    const ctrl = new AbortController();
 
-    // don't fetch when there is data already...
-    if (hasBoard && hasUser) {
-      return;
-    }
-
-    Promise.all([
-      fetch(`/api/users/2`).then((r) => r.json()),
-      fetch(`/api/board/${boardId}`).then((r) => r.json()),
-    ])
-      .then(([user, board]) => {
+    async function loadBoard() {
+      try {
+        const [user, board] = await Promise.all([
+          fetchJson(`/api/users/2`, ctrl.signal),
+          fetchJson(`/api/board/${boardId}`, ctrl.signal),
+        ]);
         ingestUsers([user]);
         ingestBoard(board);
-      })
-      .catch((err) => {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("fetch failed", err);
-      });
+      }
+    }
+
+    loadBoard();
+    return () => ctrl.abort();
   }, [boardId, ingestUsers, ingestBoard]);
 
   useEffect(() => {
@@ -39,16 +46,23 @@ export const BoardPage = () => {
 
     const es = new EventSource(`/api/board/${boardId}/events`);
 
-    es.onopen = () => {
-      console.log("sse connection opened");
+    const parseEventData = (raw: string) => {
+      try {
+        return JSON.parse(raw) as Record<string, unknown>;
+      } catch (err) {
+        console.error("Failed to parse SSE payload", err);
+        return null;
+      }
     };
 
     es.addEventListener("card-assigned", (event) => {
-      const data = JSON.parse(event.data);
+      const data = parseEventData(event.data);
+      if (!data) return;
 
-      const { id: cardId, assignee: user } = data;
+      const cardId = data.id as string;
+      const user = data.assignee as { id: number } | undefined;
       if (user) {
-        upsertUser(user); // Ensure user is in our local state
+        upsertUser(user);
         updateCard(cardId, { assigneeId: user.id });
       } else {
         updateCard(cardId, { assigneeId: undefined });
@@ -56,8 +70,13 @@ export const BoardPage = () => {
     });
 
     es.addEventListener("card-updated", (event) => {
-      const data = JSON.parse(event.data);
-      const { id: cardId, title, description, assignee: user } = data;
+      const data = parseEventData(event.data);
+      if (!data) return;
+
+      const cardId = data.id as string;
+      const title = data.title as string | undefined;
+      const description = data.description as string | undefined;
+      const user = data.assignee as { id: number } | undefined;
 
       if (user) {
         upsertUser(user);
@@ -70,12 +89,11 @@ export const BoardPage = () => {
       });
     });
 
-    es.onerror = (error) => {
-      console.log(`sse error: ${error}`);
+    es.onerror = () => {
+      console.error("SSE connection error");
     };
 
     return () => {
-      console.log("closing");
       es.close();
     };
   }, [boardId, upsertUser, updateCard]);

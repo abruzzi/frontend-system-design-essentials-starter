@@ -85,7 +85,7 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
       <div className="flex flex-col gap-4">
         {cards.map((c, idx) => (
           <ErrorBoundary
-            key={idx}
+            key={c.id}
             fallback={
               <div className="p-4 bg-red-50 rounded-lg border border-red-200">
                 <p className="text-sm text-red-600">Card failed to load</p>
@@ -109,6 +109,8 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
         <div className="flex gap-2 items-center">
           <input
             type="text"
+            id={`new-card-${columnId}`}
+            aria-label="Add a new card"
             placeholder="Add a new card..."
             value={newCardTitle}
             onChange={(e) => setNewCardTitle(e.target.value)}

@@ -21,10 +21,12 @@ export function renderApp(url: string) {
   }>((resolve) => {
     const { pipe, abort } = renderToPipeableStream(element, {
       onShellReady() {
+        clearTimeout(timeoutId);
         resolve({ pipe, didError: () => didError, abort });
       },
       onShellError(err) {
         didError = true;
+        clearTimeout(timeoutId);
         console.error(err);
         resolve({ pipe, didError: () => didError, abort });
       },
@@ -33,6 +35,6 @@ export function renderApp(url: string) {
         console.error(err);
       },
     });
-    setTimeout(abort, ABORT_DELAY);
+    const timeoutId = setTimeout(abort, ABORT_DELAY);
   });
 }

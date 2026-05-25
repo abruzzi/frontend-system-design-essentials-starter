@@ -4,12 +4,13 @@ import {
   useCallback,
   useState,
   useEffect,
+  useRef,
 } from "react";
 import type { ReactNode } from "react";
 
 const inFlightRequests = new Set<string>();
 
-interface CacheEntry<T = any> {
+interface CacheEntry<T = unknown> {
   data: T | null;
   timestamp: number;
   isLoading: boolean;
@@ -25,13 +26,15 @@ type PrefetchFn = <T>(
 interface QueryContextType {
   cache: Map<string, CacheEntry>;
   updateCache: (key: string, entry: Partial<CacheEntry>) => void;
-  prefetch: <T>(key: string, queryFn: () => Promise<T>, staleTimeMs?: number) => Promise<void>;
+  prefetch: PrefetchFn;
 }
 
 const QueryContext = createContext<QueryContextType | null>(null);
 
 export const QueryProvider = ({ children }: { children: ReactNode }) => {
   const [cache, setCache] = useState<Map<string, CacheEntry>>(new Map());
+  const cacheRef = useRef(cache);
+  cacheRef.current = cache;
 
   const updateCache = useCallback(
     (key: string, updates: Partial<CacheEntry>) => {
@@ -52,8 +55,7 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
 
   const prefetch: PrefetchFn = useCallback(
     async (key, queryFn, staleTimeMs = 60000) => {
-      // Get current cache state directly from the Map
-      const entry = cache.get(key) || {
+      const entry = cacheRef.current.get(key) || {
         data: null,
         timestamp: 0,
         isLoading: false,
@@ -62,32 +64,18 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
 
       const now = Date.now();
       const isStale = now - entry.timestamp > staleTimeMs;
-      const shouldFetch = (!entry.data && !entry.isLoading) || (isStale && !entry.isLoading);
+      const shouldFetch =
+        (!entry.data && !entry.isLoading) || (isStale && !entry.isLoading);
 
-      if (!shouldFetch) {
-        console.log(`📋 Cache hit for prefetch: ${key}`);
+      if (!shouldFetch || inFlightRequests.has(key) || entry.isLoading) {
         return;
       }
-
-      if (inFlightRequests.has(key)) {
-        console.log(`⏳ Request already in flight for prefetch: ${key}`);
-        return;
-      }
-
-      if (entry.isLoading) {
-        console.log(`⏳ Cache shows loading for prefetch: ${key}`);
-        return;
-      }
-
-      console.log(`🔄 Prefetching data for: ${key}`);
 
       inFlightRequests.add(key);
       updateCache(key, { isLoading: true, error: null });
 
       try {
         const data = await queryFn();
-        console.log(`✅ Prefetch successful for: ${key}`);
-
         updateCache(key, {
           data,
           timestamp: Date.now(),
@@ -95,8 +83,6 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
           error: null,
         });
       } catch (error) {
-        console.error(`❌ Prefetch error for: ${key}`, error);
-
         updateCache(key, {
           isLoading: false,
           error: error instanceof Error ? error : new Error(String(error)),
@@ -105,7 +91,7 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
         inFlightRequests.delete(key);
       }
     },
-    [updateCache, cache],
+    [updateCache],
   );
 
   return (
@@ -115,7 +101,7 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export function useQuery<T = any>(
+export function useQuery<T = unknown>(
   key: string,
   queryFn: () => Promise<T>,
   staleTimeMs = 60000,
@@ -126,6 +112,8 @@ export function useQuery<T = any>(
   }
 
   const { cache, updateCache } = context;
+  const cacheRef = useRef(cache);
+  cacheRef.current = cache;
 
   const entry = cache.get(key) || {
     data: null,
@@ -141,28 +129,19 @@ export function useQuery<T = any>(
 
   const fetchData = useCallback(async () => {
     if (inFlightRequests.has(key)) {
-      console.log(
-        `⏳ Request already in flight for: ${key}, skipping duplicate`,
-      );
       return;
     }
 
-    const currentEntry = cache.get(key);
+    const currentEntry = cacheRef.current.get(key);
     if (currentEntry?.isLoading) {
-      console.log(`⏳ Cache shows loading for: ${key}, skipping duplicate`);
       return;
     }
-
-    console.log(`🚀 Fetching data for: ${key}`);
 
     inFlightRequests.add(key);
-
     updateCache(key, { isLoading: true, error: null });
 
     try {
       const data = await queryFn();
-      console.log(`✅ Data fetched successfully for: ${key}`);
-
       updateCache(key, {
         data,
         timestamp: Date.now(),
@@ -170,8 +149,6 @@ export function useQuery<T = any>(
         error: null,
       });
     } catch (error) {
-      console.error(`❌ Error fetching data for: ${key}`, error);
-
       updateCache(key, {
         isLoading: false,
         error: error instanceof Error ? error : new Error(String(error)),
@@ -179,16 +156,16 @@ export function useQuery<T = any>(
     } finally {
       inFlightRequests.delete(key);
     }
-  }, [key, queryFn, updateCache, cache]);
+  }, [key, queryFn, updateCache]);
 
   useEffect(() => {
     if (shouldFetch) {
       fetchData();
     }
-  }, [fetchData, key, shouldFetch]);
+  }, [fetchData, shouldFetch]);
 
   return {
-    data: entry.data,
+    data: entry.data as T | null,
     isLoading: entry.isLoading,
     error: entry.error,
     isStale,
@@ -196,7 +173,6 @@ export function useQuery<T = any>(
   };
 }
 
-// Hook to access prefetch functionality
 export function usePrefetch() {
   const context = useContext(QueryContext);
   if (!context) {

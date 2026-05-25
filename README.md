@@ -43,11 +43,15 @@ cd frontend-system-design-essentials-starter
 npm install
 # (or: pnpm install / yarn)
 
-# 3) Run dev server
-npm run dev
-# Vite will print a local URL (e.g., http://localhost:5173)
+# 3) Run the mock API (separate terminal)
+npm run dev:api
+# Express mock API on http://localhost:4000
 
-# 4) Open the app in your browser
+# 4) Run the Vite dev server
+npm run dev
+# Vite on http://localhost:5173 (proxies /api to :4000)
+
+# 5) Open the app
 http://localhost:5173
 ```
 
@@ -56,57 +60,47 @@ http://localhost:5173
 ## Available Scripts
 
 ```bash
-npm run dev       # Start Vite dev server
-npm run build     # Production build
-npm run preview   # Preview the production build locally
-npm test          # Run tests (if present)
+npm run dev          # Vite dev server (client)
+npm run dev:api      # Express mock API on :4000
+npm run build        # Production build (client + SSR + server)
+npm run start:prod   # Run production server locally
+npm test             # Unit tests (Vitest)
+npm run test:smoke   # Playwright smoke tests (local)
+npm run preview      # Preview Vite production build (static only)
 ```
 
 ---
 
-## Mock API (MSW)
+## Mock API
 
-This project uses **MSW v2** to mock backend endpoints during development.
+Local development uses the **Express mock API** in `server/`. Vite proxies `/api/*` to `http://localhost:4000`.
 
-* The service worker file **must** exist at (already configured):
-  
-  ```
-  public/mockServiceWorker.js
-  ```
-  
-  If it’s missing, run:
-  
-  ```bash
-  npx msw init public --save
-  ```
+Start it with:
 
-* Worker is started in dev in `main.tsx` (already configured):
-  
-  ```ts
-  if (import.meta.env.DEV) {
-    const { worker } = await import('./mocks/browser');
-    await worker.start({
-      onUnhandledRequest: 'bypass',
-      serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
-    });
-  }
-  ```
+```bash
+npm run dev:api
+```
+
+### MSW (for unit tests)
+
+**MSW v2** handlers live in `src/mocks/handlers.ts` and are used in **Vitest** tests. The browser worker file is at `public/mockServiceWorker.js`. MSW is **not** started automatically in the Vite dev server — dev uses the Express API instead.
+
+If the worker file is missing:
+
+```bash
+npx msw init public --save
+```
 
 ### Endpoints implemented
 
-* `GET /api/users`
-  Returns a static list of users.
+* `GET /api/users` — paginated user search
+* `GET /api/board/:id?q=<text>` — board with optional search/filter
+* `GET /api/cards/:id` — single card lookup
+* `PATCH /api/cards/:id` — update card (includes intentional `TICKET-1` failure)
+* `POST /api/cards` — create card
+* `GET /api/board/:id/events` — SSE live updates
 
-* `GET /api/board/:id?q=<text>`
-  Returns a **board** payload with columns and cards.
-  `q` filters tickets by **title**, **ticket id**, or **assignee name**.
-  Empty columns are omitted when searching.
-
-* `GET /api/cards/:id`
-  Returns a single card (and which column it’s in).
-  `404` when not found.
-
-> Handlers live in `src/mocks/handlers.ts`. Static data is in `src/mocks/users.json` and `src/mocks/board.json`.
+> Server mock data: `server/mocks/`. MSW handlers mirror the same API for tests: `src/mocks/handlers.ts`.
 
 ---
 
@@ -133,19 +127,19 @@ type User = { id: number; name: string; description: string; avatar_url: string 
 
 ```
 src/
-  components/
-    Board.tsx
-    BoardColumn.tsx
-    BoardControl.tsx
-    ListView.tsx
-    AssigneeList.tsx
+  board-page/         # Board app UI (active)
+  your-work/          # Home / board list
+  settings/           # Settings page
   mocks/
-    handlers.ts       # MSW handlers
-    browser.ts        # setupWorker
-    users.json        # sample users
-    board.json        # sample board with assignees
+    handlers.ts       # MSW handlers (unit tests)
+    browser.ts        # MSW worker setup
+  entry-client.tsx    # Client entry (dev + prod)
+server/
+  index.ts            # Express SSR + mock API
+  mocks/              # JSON mock data
 public/
   mockServiceWorker.js
+  offlineServiceWorker.js
 ```
 
 ---
@@ -163,10 +157,10 @@ public/
   ```
 * Confirm by visiting `http://localhost:5173/mockServiceWorker.js` — you should see JS, not HTML.
 
-**404s for /api/* in dev*\*
+**404s for /api/* in dev**
 
-* Ensure the worker is started in dev (see `main.tsx`).
-* Check your console for MSW startup messages.
+* Start the mock API: `npm run dev:api`
+* Confirm `http://localhost:4000/health` returns `{ "ok": true }`
 
 **Port conflicts**
 

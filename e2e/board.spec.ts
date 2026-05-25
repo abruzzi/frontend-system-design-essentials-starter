@@ -10,20 +10,15 @@ test.describe('Board Operations', () => {
     }
 
     // Navigate to the board
-    await page.goto('/')
+    await page.goto("/board/1")
 
-    // Wait for the board to load
-    await page.waitForSelector('article', { timeout: 10000 })
+    await page.waitForSelector("article", { timeout: 10000 })
 
-    // Wait for board to finish loading (cards should have IDs)
     await page.waitForFunction(() => {
-      const cards = document.querySelectorAll('article span.font-mono')
-      return cards.length > 0 && cards[0].textContent?.trim().length > 0
-    }, { timeout: 10000 })
-
-    // Give a moment for SSE connections and final rendering to settle
-    await page.waitForTimeout(500)
-  })
+      const cards = document.querySelectorAll("article span.font-mono");
+      return cards.length > 0 && cards[0].textContent?.trim().length > 0;
+    }, { timeout: 10000 });
+  });
 
   test('should load board and display cards', async ({ page }) => {
     // Check that the header loaded (with user profile)

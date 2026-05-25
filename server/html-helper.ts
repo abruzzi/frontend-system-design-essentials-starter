@@ -37,6 +37,11 @@ type Manifest = Record<string, ManifestEntry>;
 
 export function getClientAssets() {
   if (!fs.existsSync(CLIENT_MANIFEST_PATH)) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        `Vite client manifest not found: ${CLIENT_MANIFEST_PATH}`,
+      );
+    }
     return { head: "", bodyScript: "" };
   }
 
@@ -51,6 +56,11 @@ export function getClientAssets() {
     null;
 
   if (!entry?.file) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        `Missing Vite client entry in manifest: ${CLIENT_MANIFEST_PATH}`,
+      );
+    }
     return { head: "", bodyScript: "" };
   }
 
