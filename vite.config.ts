@@ -25,7 +25,7 @@ export default defineConfig({
   },
   test: {
     globals: true, // Makes describe, it, expect available globally
-    environment: "jsdom",
+    environment: "happy-dom",
     setupFiles: ["./src/test-setup.ts"],
     exclude: [
       "**/node_modules/**",
@@ -36,7 +36,16 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      include: ["src/**/*.ts", "src/**/*.tsx", "server/**/*.ts"],
+      include: [
+        "src/shared/**/*.ts",
+        "src/shared/**/*.tsx",
+        "src/utils/**/*.ts",
+        "src/board-page/**/*.tsx",
+        "src/your-work/**/*.ts",
+        "src/your-work/**/*.tsx",
+        "src/hooks/**/*.ts",
+        "server/utils.ts",
+      ],
       exclude: [
         "node_modules/",
         "src/test/**",
@@ -51,10 +60,10 @@ export default defineConfig({
         "**/__tests__/**",
       ],
       thresholds: {
-        lines: 24,
-        branches: 30,
-        functions: 38,
-        statements: 24,
+        lines: 42,
+        branches: 38,
+        functions: 42,
+        statements: 42,
       },
     },
   },

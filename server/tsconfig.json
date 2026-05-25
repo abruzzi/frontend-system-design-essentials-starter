@@ -12,5 +12,5 @@
     "strict": false
   },
   "include": ["./**/*.ts"],
-  "exclude": ["./dist", "./tsconfig.ssr.json"]
+  "exclude": ["./dist", "./tsconfig.ssr.json", "./**/__tests__/**"]
 }

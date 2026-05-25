@@ -3,7 +3,6 @@ import "@testing-library/jest-dom/vitest";
 
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
-
 import { toHaveNoViolations } from "jest-axe";
 import { server } from "./test/msw-server.ts";
 
