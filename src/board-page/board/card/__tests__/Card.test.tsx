@@ -1,37 +1,39 @@
 import React from "react";
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { axe } from "jest-axe";
 import { render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
-import { BoardProvider, EMPTY_BOARD_STATE } from "../../../../shared/BoardContext.tsx";
-import { QueryProvider } from "../../../../shared/QueryProvider.tsx";
+import { http, HttpResponse } from "msw";
 import type { User } from "../../../../types.ts";
+import { renderWithProviders } from "../../../../test/renderWithProviders.tsx";
+import { server } from "../../../../test/msw-server.ts";
 
 import { Card } from "../Card.tsx";
 
-const mockFetch = vi.fn();
-globalThis.fetch = mockFetch as unknown as typeof fetch;
+const defaultCardProps = { columnId: "col-1", index: 0 };
 
-const defaultCardProps = { columnId: "todo", index: 0 };
-
-function renderWithProviders(ui: React.ReactElement) {
-  return render(
-    <QueryProvider>
-      <BoardProvider initialState={EMPTY_BOARD_STATE}>{ui}</BoardProvider>
-    </QueryProvider>,
-  );
-}
+let deleteCalls = 0;
 
 describe("Card Component", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    deleteCalls = 0;
+    server.use(
+      http.delete("/api/cards/:id", ({ params }) => {
+        deleteCalls += 1;
+        if (params.id === "TICKET-99") {
+          return new HttpResponse(null, { status: 204 });
+        }
+        return HttpResponse.json({ error: "Not found" }, { status: 404 });
+      }),
+      http.patch("/api/cards/:id", () =>
+        HttpResponse.json({ success: true }),
+      ),
+    );
+  });
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ success: true }),
-    });
+  afterEach(() => {
+    server.resetHandlers();
   });
 
   describe("Rendering", () => {
@@ -151,22 +153,19 @@ describe("Card Component", () => {
       const archiveButton = await screen.findByText(/archive card/i);
       await user.click(archiveButton);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        "/api/cards/TICKET-99",
-        expect.objectContaining({
-          method: "DELETE",
-        }),
-      );
+      await waitFor(() => {
+        expect(deleteCalls).toBe(1);
+      });
     });
 
     it("should handle delete failure gracefully", async () => {
       const user = userEvent.setup();
 
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        json: async () => ({ error: "Server error" }),
-      });
+      server.use(
+        http.delete("/api/cards/:id", () =>
+          HttpResponse.json({ error: "Server error" }, { status: 500 }),
+        ),
+      );
 
       renderWithProviders(
         <Card id="TICKET-99" title="Fail Delete" {...defaultCardProps} />,

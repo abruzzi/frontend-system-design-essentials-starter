@@ -36,7 +36,26 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      exclude: ["node_modules/", "src/test/", "e2e/"],
+      include: ["src/**/*.ts", "src/**/*.tsx", "server/**/*.ts"],
+      exclude: [
+        "node_modules/",
+        "src/test/**",
+        "e2e/**",
+        "src/components/**",
+        "src/entry-client.tsx",
+        "src/entry-server.tsx",
+        "src/main.tsx",
+        "src/mocks/browser.ts",
+        "src/vite-env.d.ts",
+        "**/*.d.ts",
+        "**/__tests__/**",
+      ],
+      thresholds: {
+        lines: 24,
+        branches: 30,
+        functions: 38,
+        statements: 24,
+      },
     },
   },
   build: {
