@@ -1,5 +1,5 @@
 import type { CardType } from "../../types.ts";
-import { useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { useBoardContext } from "../../shared/BoardContext.tsx";
 import { Plus } from "lucide-react";
 import { ErrorBoundary } from "../../shared/ErrorBoundary.tsx";
@@ -13,6 +13,7 @@ type BoardColumnProps = {
 export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
   const [newCardTitle, setNewCardTitle] = useState("");
   const [createCardError, setCreateCardError] = useState<string | null>(null);
+  const [moveCardToast, setMoveCardToast] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { addCard } = useBoardContext();
 
@@ -65,6 +66,12 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
 
   const { moveCard } = useBoardContext();
 
+  useEffect(() => {
+    if (!moveCardToast) return;
+    const t = setTimeout(() => setMoveCardToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [moveCardToast]);
+
   const handleMove = (
     cardId: string,
     fromColumnId: string,
@@ -74,16 +81,24 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
   ) => {
     // Update UI optimistically
     moveCard(cardId, fromColumnId, toColumnId, fromIndex, toIndex);
+    setMoveCardToast(null);
 
     // Sync with backend
     fetch(`/api/cards/${cardId}/move`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fromColumnId, toColumnId, fromIndex, toIndex }),
-    }).catch((err) => {
-      console.error("Failed to move card:", err);
-      // Could add error handling/revert logic here
-    });
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to move card (${res.status})`);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to move card:", err);
+        moveCard(cardId, toColumnId, fromColumnId, toIndex, fromIndex);
+        setMoveCardToast("Move failed. Your card was put back.");
+      });
   };
 
   return (
@@ -157,7 +172,33 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
             </div>
           </div>
         )}
+
       </div>
+
+      {moveCardToast && (
+        <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+          <div
+            role="status"
+            className="w-full max-w-md rounded-xl border border-red-200 bg-white shadow-lg"
+          >
+            <div className="flex items-start gap-3 p-3">
+              <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
+              <p className="text-sm text-neutral-900 leading-5 flex-1">
+                {moveCardToast}
+              </p>
+              <button
+                type="button"
+                onClick={() => setMoveCardToast(null)}
+                className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                aria-label="Dismiss notification"
+                title="Dismiss"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
