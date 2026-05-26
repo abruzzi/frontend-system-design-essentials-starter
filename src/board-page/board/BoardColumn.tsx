@@ -12,6 +12,7 @@ type BoardColumnProps = {
 
 export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
   const [newCardTitle, setNewCardTitle] = useState("");
+  const [createCardError, setCreateCardError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { addCard } = useBoardContext();
 
@@ -20,6 +21,8 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
     if (!title) return;
 
     setIsCreating(true);
+    setCreateCardError(null);
+
     try {
       const response = await fetch("/api/cards", {
         method: "POST",
@@ -32,19 +35,22 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
         }),
       });
 
-      if (response.ok) {
-        const newCard = await response.json();
-
-        addCard(columnId, {
-          id: newCard.id,
-          title: newCard.title,
-        });
-        setNewCardTitle("");
-      } else {
-        console.error("Failed to create card");
+      if (!response.ok) {
+        throw new Error(`Failed to create card: ${response.status}`);
       }
+
+      const newCard = await response.json();
+
+      addCard(columnId, {
+        id: newCard.id,
+        title: newCard.title,
+      });
+
+      setNewCardTitle("");
     } catch (error) {
       console.error("Error creating card:", error);
+
+      setCreateCardError("We couldn’t create this card. Please try again.");
     } finally {
       setIsCreating(false);
     }
@@ -131,6 +137,26 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
             )}
           </button>
         </div>
+
+        {createCardError && (
+          <div
+            role="alert"
+            className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <p className="leading-5">{createCardError}</p>
+              <button
+                type="button"
+                onClick={() => setCreateCardError(null)}
+                className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300"
+                aria-label="Dismiss error"
+                title="Dismiss"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -295,6 +295,16 @@ app.post("/api/cards", async (req, res) => {
     return res.status(400).json({ error: "Title and columnId are required" });
   }
 
+  // Optional demo hook: intentionally fail card creation to test error tracking (e.g. Sentry).
+  // Disabled by default. Enable by setting ENABLE_DEMO_FAILURES=true on the server and using
+  // a title that starts with "[demo-fail]".
+  if (
+    process.env.ENABLE_DEMO_FAILURES === "true" &&
+    payload.title.trim().toLowerCase().startsWith("[demo-fail]")
+  ) {
+    return res.status(500).json({ error: "Demo failure: create card" });
+  }
+
   // Find the column to add the card to
   const boardData = board as BoardPayload;
   const column = boardData.columns.find((col) => col.id === payload.columnId);
@@ -375,6 +385,16 @@ app.patch("/api/cards/:id/move", async (req, res) => {
   const data = board as BoardPayload;
 
   await delay(500);
+
+  // Optional demo hook: intentionally fail a move to test error tracking (e.g. Sentry).
+  // Disabled by default. Enable by setting ENABLE_DEMO_FAILURES=true on the server and
+  // moving card "TICKET-1".
+  if (
+    process.env.ENABLE_DEMO_FAILURES === "true" &&
+    id.toLowerCase() === "ticket-1"
+  ) {
+    return res.status(500).json({ error: "Demo failure: move card" });
+  }
 
   const fromColumn = data.columns.find((col) => col.id === payload.fromColumnId);
   const toColumn = data.columns.find((col) => col.id === payload.toColumnId);
