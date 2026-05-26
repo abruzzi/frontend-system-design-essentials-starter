@@ -2,6 +2,11 @@ import type { CardType } from "../../types.ts";
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { useBoardContext } from "../../shared/BoardContext.tsx";
 import { Plus } from "lucide-react";
+import { ApiError } from "../../errors/ApiError.ts";
+import {
+  reportCardCreationFailure,
+  reportCardMoveFailure,
+} from "../../errors/reportErrors.ts";
 import { ErrorBoundary } from "../../shared/ErrorBoundary.tsx";
 import { DraggableCard } from "./card/DraggableCard.tsx";
 
@@ -37,7 +42,7 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create card: ${response.status}`);
+        throw new ApiError("Failed to create card", response.status);
       }
 
       const newCard = await response.json();
@@ -50,6 +55,12 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
       setNewCardTitle("");
     } catch (error) {
       console.error("Error creating card:", error);
+
+      reportCardCreationFailure({
+        error,
+        columnId,
+        status: error instanceof ApiError ? error.status : undefined,
+      });
 
       setCreateCardError("We couldn’t create this card. Please try again.");
     } finally {
@@ -91,13 +102,20 @@ export const BoardColumn = ({ cards, columnId }: BoardColumnProps) => {
     })
       .then((res) => {
         if (!res.ok) {
-          throw new Error(`Failed to move card (${res.status})`);
+          throw new ApiError("Failed to move card", res.status);
         }
       })
       .catch((err) => {
         console.error("Failed to move card:", err);
         moveCard(cardId, toColumnId, fromColumnId, toIndex, fromIndex);
         setMoveCardToast("Move failed. Your card was put back.");
+        reportCardMoveFailure({
+          error: err,
+          cardId,
+          fromColumnId,
+          toColumnId,
+          status: err instanceof ApiError ? err.status : undefined,
+        });
       });
   };
 

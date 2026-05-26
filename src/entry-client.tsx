@@ -1,5 +1,9 @@
 // noinspection TypeScriptValidateTypes
 
+import { initSentry } from "./errors/initSentry.ts";
+
+initSentry();
+
 import "./App.css";
 import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";

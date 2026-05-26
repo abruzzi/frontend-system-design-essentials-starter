@@ -1,13 +1,25 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
+
+const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    ...(sentryAuthToken
+      ? [
+          sentryVitePlugin({
+            org: "i-code-it",
+            project: "javascript-react",
+            authToken: sentryAuthToken,
+          }),
+        ]
+      : []),
     visualizer({
       filename: "./dist/stats.html",
       open: false,
@@ -69,6 +81,7 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    sourcemap: true,
     manifest: true,
     rollupOptions: {
       input: "/src/entry-client.tsx",

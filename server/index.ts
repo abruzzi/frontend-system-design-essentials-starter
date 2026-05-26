@@ -77,7 +77,7 @@ export const securityHeaders = {
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'", // Needed for CSS-in-JS
     "img-src 'self' data: https:",
-    "connect-src 'self'",
+    "connect-src 'self' https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
   ].join("; "),
 };
 
