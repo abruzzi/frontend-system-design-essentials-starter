@@ -11,6 +11,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
 import { registerServiceWorker } from "./utils/serviceWorker.ts";
 import { logWebVitals } from "./utils/performance.ts";
+import { StatsigClientProvider } from "./shared/featureFlags/StatsigClientProvider.tsx";
 
 registerServiceWorker().catch((error) => {
   console.error("Failed to register service worker:", error);
@@ -22,7 +23,9 @@ const container = document.getElementById("root")!;
 
 const app = (
   <BrowserRouter>
-    <App />
+    <StatsigClientProvider>
+      <App />
+    </StatsigClientProvider>
   </BrowserRouter>
 );
 
