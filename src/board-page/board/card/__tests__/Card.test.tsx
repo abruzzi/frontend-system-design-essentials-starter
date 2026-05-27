@@ -10,6 +10,9 @@ import { renderWithProviders } from "../../../../test/renderWithProviders.tsx";
 import { server } from "../../../../test/msw-server.ts";
 
 import { Card } from "../Card.tsx";
+import { useBoardCardNewIdBadge } from "../../../../shared/featureFlags/useBoardCardNewIdBadge.ts";
+
+vi.mock("../../../../shared/featureFlags/useBoardCardNewIdBadge.ts");
 
 const defaultCardProps = { columnId: "col-1", index: 0 };
 
@@ -37,6 +40,10 @@ describe("Card Component", () => {
   });
 
   describe("Rendering", () => {
+    beforeEach(() => {
+      vi.mocked(useBoardCardNewIdBadge).mockReturnValue(false);
+    });
+
     it("should render card with title and ID", () => {
       renderWithProviders(
         <Card id="TICKET-1" title="Fix the bug" {...defaultCardProps} />,
@@ -44,6 +51,28 @@ describe("Card Component", () => {
 
       expect(screen.getByText("Fix the bug")).toBeVisible();
       expect(screen.getByText("TICKET-1")).toBeVisible();
+    });
+
+    it("shows legacy indigo badge when fg-board-card-id-badge is off", () => {
+      renderWithProviders(
+        <Card id="TICKET-1" title="Fix the bug" {...defaultCardProps} />,
+      );
+
+      const badge = screen.getByText("TICKET-1");
+      expect(badge.className).toMatch(/indigo/);
+      expect(screen.queryByText("ID")).not.toBeInTheDocument();
+    });
+
+    it("shows new id badge when fg-board-card-id-badge is on", () => {
+      vi.mocked(useBoardCardNewIdBadge).mockReturnValue(true);
+
+      renderWithProviders(
+        <Card id="TICKET-1" title="Fix the bug" {...defaultCardProps} />,
+      );
+
+      expect(screen.getByText("ID")).toBeVisible();
+      const badge = screen.getByText("TICKET-1");
+      expect(badge.className).toMatch(/emerald/);
     });
 
     it("should render as semantic article element", () => {

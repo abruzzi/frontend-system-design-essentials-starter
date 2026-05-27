@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/vitest";
 
+import type { ReactNode } from "react";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { toHaveNoViolations } from "jest-axe";
@@ -14,6 +15,17 @@ afterEach(() => {
   cleanup();
 });
 afterAll(() => server.close());
+
+// Statsig: tests run without StatsigProvider; gate checks default to off.
+vi.mock("@statsig/react-bindings", () => ({
+  StatsigProvider: ({ children }: { children: ReactNode }) => children,
+  useClientAsyncInit: () => ({
+    client: { checkGate: () => false },
+  }),
+  useStatsigClient: () => ({
+    client: { checkGate: () => false },
+  }),
+}));
 
 // Mock ResizeObserver (used by Radix UI Popover)
 globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({

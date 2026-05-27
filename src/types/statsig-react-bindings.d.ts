@@ -14,6 +14,10 @@ declare module "@statsig/react-bindings" {
     sdkKey: string,
     user: unknown,
     options?: unknown,
-  ): { client: unknown };
+  ): { client: { checkGate: (gateName: string) => boolean } };
+
+  export function useStatsigClient(): {
+    client: { checkGate: (gateName: string) => boolean };
+  };
 }
 

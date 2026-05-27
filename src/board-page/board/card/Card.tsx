@@ -7,6 +7,8 @@ import { MoreHorizontal, Archive, ArrowRight } from "lucide-react";
 import { useHydrated } from "../../../hooks/useHydrated.ts";
 import { usePrefetch } from "../../../shared/QueryProvider.tsx";
 import { CardEditModalSkeleton } from "./edit-modal/CardEditModalSkeleton.tsx";
+import { CardIdBadge } from "./CardIdBadge.tsx";
+import { useBoardCardNewIdBadge } from "../../../shared/featureFlags/useBoardCardNewIdBadge.ts";
 
 type CardProps = {
   id: string;
@@ -30,6 +32,7 @@ export const Card = ({ id, title, assignee, columnId, index }: CardProps) => {
   const { removeCard, updateCard, upsertUser, columns, moveCard } =
     useBoardContext();
   const isHydrated = useHydrated();
+  const useNewIdBadge = useBoardCardNewIdBadge();
 
   const [isModalOpen, setModalOpen] = useState(false);
 
@@ -266,9 +269,7 @@ export const Card = ({ id, title, assignee, columnId, index }: CardProps) => {
       </div>
 
       <div className="mt-3 flex items-start justify-between">
-        <span className="inline-flex items-center rounded-md border border-indigo-300 bg-indigo-50 px-2 py-1 text-[12px] font-mono text-indigo-700">
-          {id}
-        </span>
+        <CardIdBadge id={id} useNewIdBadge={useNewIdBadge} />
 
         {isHydrated ? (
           <Popover.Root open={open} onOpenChange={setOpen}>
