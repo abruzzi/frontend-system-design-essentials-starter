@@ -1,5 +1,13 @@
 import * as Popover from "@radix-ui/react-popover";
-import {lazy, Suspense, useEffect, useRef, useState} from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import { fetchUsers, UserSelect } from "./UserSelect.tsx";
 import type { User } from "../../../types.ts";
 import { useBoardContext } from "../../../shared/BoardContext.tsx";
@@ -38,7 +46,7 @@ export const Card = ({ id, title, assignee, columnId, index }: CardProps) => {
 
   const cardRef = useRef<HTMLElement | null>(null);
 
-  const handleCardClick = (e: MouseEvent) => {
+  const handleCardClick = (e: MouseEvent<HTMLElement>) => {
     // Don't open modal if clicking on interactive elements
     const target = e.target as HTMLElement;
 
@@ -57,11 +65,18 @@ export const Card = ({ id, title, assignee, columnId, index }: CardProps) => {
     }
   };
 
-  const handleCardKeyDown = (e: KeyboardEvent) => {
-    // Open modal on Enter or Space
+  const handleCardKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    // Open modal on Enter or Space (card surface only — not while editing in the modal)
+    if (isModalOpen) return;
+
     const target = e.target as HTMLElement;
 
     if (
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.tagName === "SELECT" ||
+      target.isContentEditable ||
+      target.closest('[role="dialog"]') ||
       target.tagName === "BUTTON" ||
       target.closest("button") ||
       target.closest('[class*="rs__"]') || // react-select components (uses double underscore)
@@ -186,6 +201,7 @@ export const Card = ({ id, title, assignee, columnId, index }: CardProps) => {
   }
 
   return (
+    <>
     <article
       ref={cardRef}
       tabIndex={0}
@@ -322,6 +338,8 @@ export const Card = ({ id, title, assignee, columnId, index }: CardProps) => {
         )}
       </div>
 
+    </article>
+
       {isModalOpen && (
         <Suspense fallback={<CardEditModalSkeleton />}>
           <CardEditModal
@@ -334,6 +352,6 @@ export const Card = ({ id, title, assignee, columnId, index }: CardProps) => {
           />
         </Suspense>
       )}
-    </article>
+    </>
   );
 };

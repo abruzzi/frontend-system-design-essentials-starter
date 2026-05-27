@@ -145,7 +145,6 @@ export const CardEditModal = ({
               <div
                 id="card-assignee"
                 onKeyDown={(e) => {
-                  console.log(e);
                   if (e.key === "Tab" && !e.shiftKey) {
                     e.preventDefault();
                     buttonRef.current?.focus();

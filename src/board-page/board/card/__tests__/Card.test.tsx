@@ -168,6 +168,24 @@ describe("Card Component", () => {
     });
   });
 
+  describe("Edit modal", () => {
+    it("allows typing spaces in the title field", async () => {
+      const user = userEvent.setup();
+
+      renderWithProviders(
+        <Card id="TICKET-1" title="Fix the bug" {...defaultCardProps} />,
+      );
+
+      await user.click(screen.getByRole("heading", { name: /fix the bug/i }));
+
+      const titleInput = await screen.findByLabelText(/title/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, "Fix the bug");
+
+      expect(titleInput).toHaveValue("Fix the bug");
+    });
+  });
+
   describe("Delete Interaction (with real context!)", () => {
     it("should call delete API when archive is clicked", async () => {
       const user = userEvent.setup();

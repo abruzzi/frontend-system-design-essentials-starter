@@ -134,6 +134,19 @@ describe("CardEditModal", () => {
     vi.restoreAllMocks();
   });
 
+  it("allows spaces in the title while editing", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CardEditModalHarness />, {
+      boardState: buildNormalizedBoard(),
+    });
+
+    const titleInput = screen.getByLabelText(/title/i);
+    await user.clear(titleInput);
+    await user.type(titleInput, "Fix the bug");
+
+    expect(titleInput).toHaveValue("Fix the bug");
+  });
+
   it("disables save when the title is empty", async () => {
     const user = userEvent.setup();
 
