@@ -15,7 +15,7 @@ export default defineConfig({
       ? [
           sentryVitePlugin({
             org: "i-code-it",
-            project: "javascript-react",
+            project: "icodeit-board",
             authToken: sentryAuthToken,
           }),
         ]
@@ -34,6 +34,10 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  resolve: {
+    // Keep a single React instance across client + SSR builds.
+    dedupe: ["react", "react-dom"],
   },
   test: {
     globals: true, // Makes describe, it, expect available globally
@@ -101,7 +105,6 @@ export default defineConfig({
     resolve: {
       // Ensure consistent React resolution
       conditions: ["node", "import"],
-      dedupe: ["react", "react-dom"],
     },
   },
 });
