@@ -1,6 +1,7 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
+import * as Sentry from "@sentry/react";
 import {
   BoardProvider,
   EMPTY_BOARD_STATE,
@@ -8,6 +9,8 @@ import {
 import { QueryProvider } from "./shared/QueryProvider.tsx";
 import { AppLayout } from "./shared/AppLayout.tsx";
 import { PageLoadingFallback } from "./shared/PageLoadingFallback.tsx";
+
+const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes);
 
 const YourWorkPage = lazy(() =>
   import("./your-work/YourWorkPage.tsx").then((mod) => ({
@@ -32,12 +35,12 @@ const App = () => (
     <BoardProvider initialState={EMPTY_BOARD_STATE}>
       <AppLayout>
         <Suspense fallback={<PageLoadingFallback />}>
-          <Routes>
+          <SentryRoutes>
             <Route path="/your-work" element={<YourWorkPage />} />
             <Route path="/board/:id" element={<BoardPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/" element={<YourWorkPage />} />
-          </Routes>
+          </SentryRoutes>
         </Suspense>
       </AppLayout>
     </BoardProvider>

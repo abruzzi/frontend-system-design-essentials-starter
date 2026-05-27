@@ -10,14 +10,14 @@ import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
 import { registerServiceWorker } from "./utils/serviceWorker.ts";
-import { logWebVitals } from "./utils/performance.ts";
+import { initWebVitalsReporting } from "./utils/performance.ts";
 import { StatsigClientProvider } from "./shared/featureFlags/StatsigClientProvider.tsx";
 
 registerServiceWorker().catch((error) => {
   console.error("Failed to register service worker:", error);
 });
 
-logWebVitals();
+initWebVitalsReporting();
 
 const container = document.getElementById("root")!;
 
